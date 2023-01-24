@@ -1,9 +1,10 @@
 import asyncio
 import datetime
 from datetime import datetime, timedelta
+from pathlib import Path
 import threading
 from typing import List
-from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect,File, UploadFile
+from fastapi import Depends, FastAPI, Header, Response, WebSocket, WebSocketDisconnect,File, UploadFile
 from pydantic import BaseModel
 import uvicorn
 from fastapi.templating import Jinja2Templates
@@ -41,7 +42,7 @@ from sql import MySQL
 nest_asyncio.apply()
 
 app = FastAPI()
-networkip = '192.168.0.112'
+networkip = '192.168.43.192'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 
@@ -49,33 +50,57 @@ templates = Jinja2Templates(directory="templates")
 
 
 app = FastAPI()
+# CHUNK_SIZE = 1024*1024
+# file_path = "Recordings/file,33,complete_recording.mp4"
+
+
+# @app.get("/video")
+# async def video_feed():
+#    return FileResponse(file_path)
+
 CHUNK_SIZE = 1024*1024
-file_path = "Recordings/file,33,complete_recording.mp4"
+
+
 
 
 @app.get("/video")
-async def video_feed():
-   return FileResponse(file_path)
+async def video_endpoint(range: str = Header(None),path:str=None):
+    video_path = Path(path)
+    if range==None:
+        range = "bytes=0-"
+    start, end = range.replace("bytes=", "").split("-")
+    start = int(start)
+    end = int(end) if end else start + CHUNK_SIZE
+    print(range)
+    with open(video_path, "rb") as video:
+        video.seek(start)
+        data = video.read(end - start)
+        filesize = str(video_path.stat().st_size)
+        headers = {
+            'Content-Range': f'bytes {str(start)}-{str(end)}/{filesize}',
+            'Accept-Ranges': 'bytes'
+        }
+        return Response(data, status_code=206, headers=headers, media_type="video/mp4")
 #---------------------------Camera-----------------------------------------
 
     
-def connect(websocket,count):
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        async def  connect(websocket,count):
-            await websocket.accept()
-            # if count==1 or count==2:
-            #     camera = cv2.VideoCapture(cmaeraip2)
-            #     count+=1
-            # else:
-            camera = cv2.VideoCapture("cmaeraip2")
-            while True:
-                success, frame = camera.read()
-                if not success:
-                    break
-                else:
-                    ret, buffer = cv2.imencode('.jpg', frame)
-                    await websocket.send_bytes(buffer.tobytes()) 
-        asyncio.get_event_loop().run_until_complete(connect(websocket,count))
+# def connect(websocket,count):
+#         asyncio.set_event_loop(asyncio.new_event_loop())
+#         async def  connect(websocket,count):
+#             await websocket.accept()
+#             # if count==1 or count==2:
+#             #     camera = cv2.VideoCapture(cmaeraip2)
+#             #     count+=1
+#             # else:
+#             camera = cv2.VideoCapture("cmaeraip2")
+#             while True:
+#                 success, frame = camera.read()
+#                 if not success:
+#                     break
+#                 else:
+#                     ret, buffer = cv2.imencode('.jpg', frame)
+#                     await websocket.send_bytes(buffer.tobytes()) 
+#         asyncio.get_event_loop().run_until_complete(connect(websocket,count))
         
 # async def  connect1(websocket,count):
 #         await websocket.accept()
@@ -91,13 +116,14 @@ def connect(websocket,count):
 #             else:
 #                 ret, buffer = cv2.imencode('.jpg', frame)
 #                 await websocket.send_bytes(buffer.tobytes()) 
-@app.websocket("/{count}/ws")
-async def get_stream(websocket: WebSocket,count: int):
-    try:
-        connect(websocket,count)
-        # Thread(target=asyncio.run,args=(connect1(websocket=websocket,count=count))).start()
-    except WebSocketDisconnect:
-        print("Client disconnected")   
+
+# @app.websocket("/{count}/ws")
+# async def get_stream(websocket: WebSocket,count: int):
+#     try:
+#         connect(websocket,count)
+#         # Thread(target=asyncio.run,args=(connect1(websocket=websocket,count=count))).start()
+#     except WebSocketDisconnect:
+#         print("Client disconnected")   
 
 
 #------------------------------------------------Video Recordings----------------------------------------------------------------
@@ -169,7 +195,7 @@ def start_stream():
                         rules =  mrules.Rules(id=row.ID,th_id=row.TH_ID,start_record=row.START_RECORD,end_record=row.END_RECORD,full_record=row.FULL_RECORD)
                     cursor.execute(f'''
                             SELECT * FROM TEACHERSLOTS WHERE TH_ID='{teach.id}'
-                                ''')
+                                ''') 
                     teacher_slot=None
                     for row in cursor.fetchall():
                         if row.STATUS == 0:
@@ -399,7 +425,12 @@ def addrecordings(recordings : mrecordings.Recordings):
 @app.get('/api/recordings-details') 
 def recordingsdetails():
     return recordings_object.recordings_details()
-    
+
+@app.get('/api/recordings-details-by-teacherid/{teacherid}') 
+def recordingsdetailsbyteacherid(teacherid:int):
+    return recordings_object.recordings_details_byteacherid(teacherid=teacherid)
+
+  
 @app.put('/api/update-recordings-details') 
 def updaterecordingsdetails(recordings : mrecordings.Recordings):
     return recordings_object.update_recordings_details(recordings=recordings)

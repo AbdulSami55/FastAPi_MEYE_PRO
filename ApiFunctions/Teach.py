@@ -100,6 +100,20 @@ class TeachApi:
                             VALUES
                             ('{th_id}','{i}','{0}')
                             ''')
+                    elif cr_hour==2:
+                        for i in range(1,17):
+                            cursor.execute(f'''
+                            INSERT INTO TEACHERSLOTS
+                            VALUES
+                            ('{th_id}','{i}','{0}')
+                            ''')
+                    elif cr_hour==4:
+                        for i in range(1,49):
+                            cursor.execute(f'''
+                            INSERT INTO TEACHERSLOTS
+                            VALUES
+                            ('{th_id}','{i}','{0}')
+                            ''')
                 except:
                      cursor.execute(f'''
                             DELETE FROM TEACH

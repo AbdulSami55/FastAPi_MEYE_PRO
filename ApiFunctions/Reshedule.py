@@ -1,4 +1,3 @@
-
 import Model.TimeTable as mtimetable
 from sql import MySQL
 import Model.TimeTable as mtimetable
