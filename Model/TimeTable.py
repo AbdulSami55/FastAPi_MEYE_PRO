@@ -24,10 +24,10 @@ class EndTime(Enum):
     
 class TimeTable(BaseModel):
     id : int
-    sec_id : int
+    sectionID : int
     starttime : StartTime
     endtime : EndTime
     day:Day
-    cid:int 
-    vid:int   
+    courseID:int 
+    venueID:int   
     

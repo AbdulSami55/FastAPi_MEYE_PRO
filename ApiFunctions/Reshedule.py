@@ -19,11 +19,11 @@ class RescheduleApi:
             et = row.END_TIME.split(':')
             st = f'{st[0]}:{st[1]}'
             et = f'{et[0]}:{et[1]}'
-            lsttimetable.append(mtimetable.TimeTable(id=row.ID,sec_id=row.SEC_ID
+            lsttimetable.append(mtimetable.TimeTable(id=row.ID,sectionID=row.SectionID
                                                 ,starttime=st,
                                                 endtime=et,
-                                                day=row.DAY,cid=row.C_ID,
-                                                vid=row.V_ID))
+                                                day=row.DAY,courseID=row.CourseID,
+                                                venueID=row.VenueID))
        
         # self.conn.commit()
         return {"data":lsttimetable,
@@ -38,8 +38,8 @@ class RescheduleApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.reschedule.Reschedule(id=row.ID,thid=row.TH_ID,
-                                                  vid=row.V_ID,status=row.STATUS,
+            lst.append(self.reschedule.Reschedule(id=row.ID,teachID=row.TeachID,
+                                                  venueID=row.VenueID,status=row.STATUS,
                                                   date=row.DATE))
         
         return {"data":lst}
@@ -49,7 +49,7 @@ class RescheduleApi:
         cursor = sql.conn.cursor()
         cursor.execute(f'''
                    UPDATE RESCHEDULE SET 
-                   TH_ID='{reschedule.thid}',V_ID='{reschedule.vid}',
+                   TeachID='{reschedule.teachID}',VenueID='{reschedule.venueID}',
                    STATUS ='{reschedule.status}',
                    DATE='{reschedule.date}'
                    WHERE  ID='{reschedule.id}'
@@ -76,7 +76,7 @@ class RescheduleApi:
             cursor.execute(f'''
                     INSERT INTO RESCHEDULE
                     VALUES
-                    ('{reschedule.thid}','{reschedule.vid}',
+                    ('{reschedule.teachID}','{reschedule.venueID}',
                     '{reschedule.status}','{reschedule.starttime.value}'
                     ,'{reschedule.endtime.value}','{reschedule.day.value}')
                     ''')
@@ -100,11 +100,11 @@ class RescheduleApi:
                 st = f'{st[0]}:{st[1]}'
                 et = f'{et[0]}:{et[1]}'
                 if row.DAY in lstday:
-                    lsttimetable.append(mtimetable.TimeTable(id=row.ID,sec_id=row.SEC_ID
+                    lsttimetable.append(mtimetable.TimeTable(id=row.ID,sectionID=row.SectionID
                                                         ,starttime=st,
                                                         endtime=et,
-                                                        day=row.DAY,cid=row.C_ID,
-                                                        vid=row.V_ID))
+                                                        day=row.DAY,courseID=row.CourseID,
+                                                        venueID=row.VenueID))
             cursor.execute(f'''
                     SELECT * FROM RESCHEDULE WHERE DATE >= '{startdate}' AND DATE <= '{enddate}' AND STATUS =0
                         ''')
@@ -114,30 +114,30 @@ class RescheduleApi:
                 st = f'{st[0]}:{st[1]}'
                 et = f'{et[0]}:{et[1]}'
                 secid = 0
-                cid = 0
+                courseID = 0
                 sql1 = MySQL()
                 sql1.__enter__()
                 cursor1 = sql1.conn.cursor()
                 cursor1.execute(f'''
-                   SELECT * FROM TEACHERSLOTS WHERE ID = '{row.TS_ID}'
+                   SELECT * FROM TEACHERSLOTS WHERE ID = '{row.TeacherSlotID}'
                         ''')
                 for data in cursor1.fetchall():
                     cursor1.execute(f'''
-                    SELECT * FROM TEACH WHERE ID = '{data.TH_ID}'
+                    SELECT * FROM TEACH WHERE ID = '{data.TeachID}'
                             ''')
                     for teachdata in cursor1.fetchall():
                         cursor1.execute(f'''
-                        SELECT * FROM TIMETABLE WHERE ID = '{teachdata.TM_ID}'
+                        SELECT * FROM TIMETABLE WHERE ID = '{teachdata.TimeTableID}'
                                 ''')
                         for timetabledata in cursor1.fetchall():
-                            secid=timetabledata.SEC_ID
-                            cid = timetabledata.C_ID
-                lsttimetable.append(self.timetable.TimeTable(id=-1,sec_id=secid
+                            secid=timetabledata.SectionID
+                            courseID = timetabledata.CourseID
+                lsttimetable.append(self.timetable.TimeTable(id=-1,sectionID=secid
                                                     ,starttime=st,
                                                     endtime=et,
                                                     day=row.DAY,
-                                                    cid=cid,
-                                                    vid=row.V_ID))
+                                                    courseID=courseID,
+                                                    venueID=row.VenueID))
             return lsttimetable
         except ZeroDivisionError:
             print(ZeroDivisionError)

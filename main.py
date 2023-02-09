@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import threading
 from typing import List
-from fastapi import Depends, FastAPI, Header, Response, WebSocket, WebSocketDisconnect,File, UploadFile
+from fastapi import Depends, FastAPI, Header, Request, Response, WebSocket, WebSocketDisconnect,File, UploadFile
 from pydantic import BaseModel
 import uvicorn
 from fastapi.templating import Jinja2Templates
@@ -39,17 +39,20 @@ import Model.TeacherSlots as mteacherslots
 import nest_asyncio
 from VideoRecording import RTSPVideoWriterObject
 from sql import MySQL
+from fastapi.responses import HTMLResponse
 nest_asyncio.apply()
 
-app = FastAPI()
 networkip = '192.168.43.192'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
-
-templates = Jinja2Templates(directory="templates")
-
-
 app = FastAPI()
+
+# templates = Jinja2Templates(directory="templates")
+# @app.get("/", response_class=HTMLResponse)
+# async def read_item(request: Request):
+#     return templates.TemplateResponse("indexweb.html", {"request": request})
+
+
 # CHUNK_SIZE = 1024*1024
 # file_path = "Recordings/file,33,complete_recording.mp4"
 
@@ -84,31 +87,32 @@ async def video_endpoint(range: str = Header(None),path:str=None):
 #---------------------------Camera-----------------------------------------
 
     
-# def connect(websocket,count):
-#         asyncio.set_event_loop(asyncio.new_event_loop())
-#         async def  connect(websocket,count):
-#             await websocket.accept()
-#             # if count==1 or count==2:
-#             #     camera = cv2.VideoCapture(cmaeraip2)
-#             #     count+=1
-#             # else:
-#             camera = cv2.VideoCapture("cmaeraip2")
-#             while True:
-#                 success, frame = camera.read()
-#                 if not success:
-#                     break
-#                 else:
-#                     ret, buffer = cv2.imencode('.jpg', frame)
-#                     await websocket.send_bytes(buffer.tobytes()) 
-#         asyncio.get_event_loop().run_until_complete(connect(websocket,count))
+def connect(websocket,count):
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        async def  connect(websocket,count):
+            await websocket.accept()
+            camera = cv2.VideoCapture('rtsp://192.168.43.1:8000/h264_ulaw.sdp')
+            # if count==1:
+            #     camera = cv2.VideoCapture('rtsp://192.168.43.228:8080/h264_ulaw.sdp')
+            #     count+=1
+            # else:
+            #     camera = cv2.VideoCapture('rtsp://192.168.43.118:8080/h264_ulaw.sdp')
+            while True:
+                success, frame = camera.read()
+                if not success:
+                    break
+                else:
+                    ret, buffer = cv2.imencode('.jpg', frame)
+                    await websocket.send_bytes(buffer.tobytes()) 
+        asyncio.get_event_loop().run_until_complete(connect(websocket,count))
         
 # async def  connect1(websocket,count):
 #         await websocket.accept()
 #         if count==1 or count==2:
-#             camera = cv2.VideoCapture(cmaeraip2)
+#             camera = cv2.VideoCapture('rtsp://192.168.43.228:8080/h264_ulaw.sdp')
 #             count+=1
 #         else:
-#             camera = cv2.VideoCapture(cmaeraip2)
+#             camera = cv2.VideoCapture('rtsp://192.168.43.118:8080/h264_ulaw.sdp')
 #         while True:
 #             success, frame = camera.read()
 #             if not success:
@@ -117,13 +121,13 @@ async def video_endpoint(range: str = Header(None),path:str=None):
 #                 ret, buffer = cv2.imencode('.jpg', frame)
 #                 await websocket.send_bytes(buffer.tobytes()) 
 
-# @app.websocket("/{count}/ws")
-# async def get_stream(websocket: WebSocket,count: int):
-#     try:
-#         connect(websocket,count)
-#         # Thread(target=asyncio.run,args=(connect1(websocket=websocket,count=count))).start()
-#     except WebSocketDisconnect:
-#         print("Client disconnected")   
+@app.websocket("/{count}/ws")
+async def get_stream(websocket: WebSocket,count: int):
+    try:
+        connect(websocket,count)
+        # Thread(target=asyncio.run,args=(connect1(websocket=websocket,count=count))).start()
+    except WebSocketDisconnect:
+        print("Client disconnected")   
 
 
 #------------------------------------------------Video Recordings----------------------------------------------------------------
@@ -169,37 +173,37 @@ def start_stream():
     for timetable in lsttm:
         if timetable.id ==11:
             cursor.execute(f'''
-                    SELECT * FROM CAMERA WHERE V_ID='{timetable.vid}'
+                    SELECT * FROM CAMERA WHERE VenueID='{timetable.venueID}'
                         ''')
             for row in cursor.fetchall():
                 cursor.execute(f'''
-                    SELECT * FROM DVR WHERE ID='{row.DID}'
+                    SELECT * FROM DVR WHERE ID='{row.DvrID}'
                         ''')
                 dvrip=''
                 for dvrrow in cursor.fetchall():
                     dvrip=dvrrow.IP
                 cursor.execute(f'''
-                        SELECT * FROM TEACH WHERE TM_ID='{timetable.id}'
+                        SELECT * FROM TEACH WHERE TimeTableID='{timetable.id}'
                             ''')
                 lst=[]
                 teacher_id=-1
                 for row in cursor.fetchall():
-                    lst.append(mteach.Teach(id=row.ID,tmid=row.TM_ID,tid=row.T_ID))
-                    teacher_id = row.T_ID
+                    lst.append(mteach.Teach(id=row.ID,timeTableID=row.TimeTableID,teacherID=row.TeacherID))
+                    teacher_id = row.TeacherID
                 for teach in lst:
                     cursor.execute(f'''
-                            SELECT * FROM RULES WHERE TH_ID='{teach.id}'
+                            SELECT * FROM RULES WHERE TeachID='{teach.id}'
                                 ''')
                     rules=None
                     for row in cursor.fetchall():
-                        rules =  mrules.Rules(id=row.ID,th_id=row.TH_ID,start_record=row.START_RECORD,end_record=row.END_RECORD,full_record=row.FULL_RECORD)
+                        rules =  mrules.Rules(id=row.ID,teachID=row.TeachID,start_record=row.START_RECORD,end_record=row.END_RECORD,full_record=row.FULL_RECORD)
                     cursor.execute(f'''
-                            SELECT * FROM TEACHERSLOTS WHERE TH_ID='{teach.id}'
+                            SELECT * FROM TEACHERSLOTS WHERE TeachID='{teach.id}'
                                 ''') 
                     teacher_slot=None
                     for row in cursor.fetchall():
                         if row.STATUS == 0:
-                            teacher_slot = mteacherslots.TeacherSlot(id=row.ID,thid=row.TH_ID,slot=row.SLOT,status=row.STATUS)
+                            teacher_slot = mteacherslots.TeacherSlot(id=row.ID,teachID=row.TeachID,slot=row.SLOT,status=row.STATUS)
                             break
                     
                     t1 = threading.Thread(target=cam, args=(f'rtsp://{dvrip}:8000/h264_ulaw.sdp', rules.start_record, rules.end_record, rules.full_record,timetable.starttime,timetable.endtime,timetable.day.value,teacher_slot,teacher_id))
@@ -232,9 +236,9 @@ def deletedvrdetails(dvr : mdvr.DVR):
 def addcamera(camera : mcamera.Camera):
     return camera_object.add_camera(camera=camera)
 
-@app.get('/api/camera-details/{did}') 
-def cameradetails(did:int):
-    return camera_object.camera_details(did)
+@app.get('/api/camera-details/{dvrID}') 
+def cameradetails(dvrID:int):
+    return camera_object.camera_details(dvrID)
     
 @app.put('/api/update-camera-details') 
 def updatecameradetails(camera : mcamera.Camera):

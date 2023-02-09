@@ -6,16 +6,16 @@ class CameraApi:
     def __init__(self,cam) -> None:
         self.cam = cam
         
-    def camera_details(self,did):
+    def camera_details(self,dvrID):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM CAMERA WHERE DID ='{did}' 
+                SELECT * FROM CAMERA WHERE DvrID ='{dvrID}' 
                     ''')
         lst=[]
         for row in cursor.fetchall():
-           lst.append(self.cam.Camera(id=row.ID,did=row.DID,vid=row.V_ID,no=row.NO))
+           lst.append(self.cam.Camera(id=row.ID,dvrID=row.DvrID,venueID=row.VenueID,portNumber=row.PortNumber))
         
         return {"data":lst}
         
@@ -24,8 +24,8 @@ class CameraApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                   UPDATE CAMERA SET DID = '{camera.did}',
-                   NO='{camera.no}' ,  V_ID='{camera.vid}'
+                   UPDATE CAMERA SET DvrID = '{camera.dvrID}',
+                   PortNumber='{camera.portNumber}' ,  VenueID='{camera.venueID}'
                    WHERE ID ='{camera.id}'
                    ''')
     
@@ -46,6 +46,6 @@ class CameraApi:
         cursor.execute(f'''
                 INSERT INTO CAMERA
                 VALUES
-                ('{camera.did}','{camera.vid}','{camera.no}')
+                ('{camera.dvrID}','{camera.venueID}','{camera.portNumber}')
                 ''')
         return {"data":"okay"}

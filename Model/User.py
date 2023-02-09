@@ -9,7 +9,7 @@ class Role(Enum):
 
 class User(BaseModel):
     id:int
-    uid:str
+    userID:str
     name:str
     image:Optional[str] = None
     password:str

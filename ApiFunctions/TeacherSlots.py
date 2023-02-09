@@ -10,11 +10,11 @@ class TeacherSlots:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM TeacherSlots WHERE TH_ID='{teacherid}'
+                SELECT * FROM TeacherSlots WHERE TeachID='{teacherid}'
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.teacherslots.TeacherSlots(id=row.ID,thid=row.TH_ID,slot=row.SLOT,status=row.STATUS))
+            lst.append(self.teacherslots.TeacherSlots(id=row.ID,teachID=row.TeachID,slot=row.SLOT,status=row.STATUS))
             
         return {"data":lst}
     def update_teacherslots_details(self,teacherslots):
@@ -34,7 +34,7 @@ class TeacherSlots:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                   DELETE FROM TEACHERSLOTS WHERE TH_ID = '{teacherslots.thid}'
+                   DELETE FROM TEACHERSLOTS WHERE TeachID = '{teacherslots.teachID}'
                     ''')
     
         return {"data":"okay"}
@@ -43,7 +43,7 @@ class TeacherSlots:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                           INSERT INTO TEACHERSLOTS VALUES('{teacherslots.id}','{teacherslots.thid}'
+                           INSERT INTO TEACHERSLOTS VALUES('{teacherslots.id}','{teacherslots.teachID}'
                            ,'{teacherslots.slot}','{teacherslots.status}')
                             ''')
         

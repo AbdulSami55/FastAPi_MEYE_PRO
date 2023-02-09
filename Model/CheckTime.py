@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class CheckTime(BaseModel):
     id:int
-    tsid:int
+    teacherSlotID:int
     totaltimein:int
     totaltimeout:int
     

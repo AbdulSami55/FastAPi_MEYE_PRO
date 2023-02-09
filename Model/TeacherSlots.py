@@ -8,6 +8,6 @@ class STATUS(Enum):
     
 class TeacherSlot(BaseModel):
     id:int
-    thid:int
+    teachID:int
     slot:int
     status:STATUS

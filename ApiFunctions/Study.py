@@ -15,7 +15,7 @@ class StudyApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.study.Study(id=row.ID,thid=row.TH_ID,eid=row.E_ID))
+            lst.append(self.study.Study(id=row.ID,teachID=row.TeachID,eid=row.E_ID))
         
         return {"data":lst}
     def update_study_details(self,study):
@@ -24,7 +24,7 @@ class StudyApi:
         cursor = sql.conn.cursor()
         cursor.execute(f'''
                    UPDATE STUDY SET 
-                   TH_ID='{study.thid}',E_ID='{study.eid}'
+                   TeachID='{study.teachID}',E_ID='{study.eid}'
                    WHERE  ID='{study.id}'
                    ''')
     
@@ -48,7 +48,7 @@ class StudyApi:
         cursor.execute(f'''
                 INSERT INTO STUDY
                 VALUES
-                ('{study.thid}','{study.eid}')
+                ('{study.teachID}','{study.eid}')
                 ''')
 
         return {"data":"okay"}

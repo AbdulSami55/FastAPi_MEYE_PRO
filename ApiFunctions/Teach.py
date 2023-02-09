@@ -10,11 +10,11 @@ class TeachApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM TEACH WHERE T_ID='{teacherid}'
+                SELECT * FROM TEACH WHERE TeacherID='{teacherid}'
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.teach.Teach(id=row.ID,tmid=row.TM_ID,tid=row.T_ID))
+            lst.append(self.teach.Teach(id=row.ID,timeTableID=row.TimeTableID,teacherID=row.TeacherID))
             
         return {"data":lst}
     def update_teach_details(self,teach):
@@ -22,8 +22,8 @@ class TeachApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                   UPDATE TEACH SET TM_ID = '{teach.tmid}',
-                   T_ID='{teach.tid}'
+                   UPDATE TEACH SET TimeTableID = '{teach.timeTableID}',
+                   TeacherID='{teach.teacherID}'
                    WHERE  ID = '{teach.id}' 
                    ''')
     
@@ -44,15 +44,15 @@ class TeachApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                            SELECT * FROM MEYE_USER WHERE ID='{teach.tid}'
+                            SELECT * FROM MEYE_USER WHERE ID='{teach.teacherID}'
                             ''')
         role=''
         for row in cursor.fetchall():
             role=row.ROLE
         if role=='Teacher':
             cursor.execute(f'''
-                            SELECT * FROM TEACH WHERE T_ID='{teach.tid}' 
-                            AND TM_ID='{teach.tmid}'
+                            SELECT * FROM TEACH WHERE TeacherID='{teach.teacherID}' 
+                            AND TimeTableID='{teach.timeTableID}'
                             ''')
             count=0
             for row in cursor.fetchall():
@@ -61,69 +61,69 @@ class TeachApi:
                 cursor.execute(f'''
                         SELECT * FROM TIMETABLE
                         WHERE ID=
-                        '{teach.tmid}'
+                        '{teach.timeTableID}'
                         ''')
-                cid=-1
+                courseID=-1
                 for row in cursor.fetchall():
-                   cid = row.C_ID
+                   courseID = row.CourseID
                 cursor.execute(f'''
                         SELECT * FROM COURSE
                         WHERE ID=
-                        '{cid}'
+                        '{courseID}'
                         ''')
                 cr_hour=-1
                 for row in cursor.fetchall():
-                   cr_hour = row.CR_HOURS
+                   cr_hour = row.CreditHours
                 try:
                     cursor.execute(f'''
                             INSERT INTO TEACH
                             VALUES
-                            ('{teach.tmid}','{teach.tid}')
+                            ('{teach.timeTableID}','{teach.teacherID}')
                             ''')
                     cursor.execute(f'''
                             SELECT * FROM TEACH
-                            WHERE TM_ID=
-                            '{teach.tmid}' AND T_ID='{teach.tid}'
+                            WHERE TimeTableID=
+                            '{teach.timeTableID}' AND TeacherID='{teach.teacherID}'
                             ''')
-                    th_id=-1
+                    teachID=-1
                     for i in cursor.fetchall():
-                        th_id=i.ID
+                        teachID=i.ID
                     cursor.execute(f'''
                             INSERT INTO RULES
                             VALUES
-                            ('{th_id}','{False}','{False}','{False}')
+                            ('{teachID}','{False}','{False}','{False}')
                             ''')
                     if cr_hour==3:
                         for i in range(1,33):
                             cursor.execute(f'''
                             INSERT INTO TEACHERSLOTS
                             VALUES
-                            ('{th_id}','{i}','{0}')
+                            ('{teachID}','{i}','{0}')
                             ''')
                     elif cr_hour==2:
                         for i in range(1,17):
                             cursor.execute(f'''
                             INSERT INTO TEACHERSLOTS
                             VALUES
-                            ('{th_id}','{i}','{0}')
+                            ('{teachID}','{i}','{0}')
                             ''')
                     elif cr_hour==4:
                         for i in range(1,49):
                             cursor.execute(f'''
                             INSERT INTO TEACHERSLOTS
                             VALUES
-                            ('{th_id}','{i}','{0}')
+                            ('{teachID}','{i}','{0}')
                             ''')
                 except:
                      cursor.execute(f'''
                             DELETE FROM TEACH
-                             WHERE TM_ID=
-                            '{teach.tmid}' AND T_ID='{teach.tid}'
+                             WHERE TimeTableID=
+                            '{teach.timeTableID}' AND TeacherID='{teach.teacherID}'
                             ''')
                      cursor.execute(f'''
                             DELETE FROM TEACHERSLOTS
-                            WHERE TH_ID=
-                            '{th_id}'
+                            WHERE TeachID=
+                            '{teachID}'
                             ''')
                      return {"data":"Something Went Wrong"}
                     

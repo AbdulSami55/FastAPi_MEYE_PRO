@@ -15,21 +15,21 @@ class CheckTimeApi:
                     ''')
         checktime=None
         for row in cursor.fetchall():
-            checktime = self.checktime.CheckTime(tsid = row.TS_ID,id=row.ID,totaltimein=row.TOTAL_TIME_IN,totaltimeout=row.TOTAL_TIME_OUT)
+            checktime = self.checktime.CheckTime(teacherSlotID = row.TeacherSlotID,id=row.ID,totaltimein=row.TOTAL_TIME_IN,totaltimeout=row.TOTAL_TIME_OUT)
         
         return {"data":checktime
                }
     
-    def checksingletime_details(self,tsid):
+    def checksingletime_details(self,teacherSlotID):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM CheckTime WHERE TS_ID='{tsid}'
+                SELECT * FROM CheckTime WHERE TeacherSlotID='{teacherSlotID}'
                     ''')
         checktime=None
         for row in cursor.fetchall():
-            checktime = self.checktime.CheckTime(tsid = row.TS_ID,id=row.ID,totaltimein=row.TOTAL_TIME_IN,totaltimeout=row.TOTAL_TIME_OUT)
+            checktime = self.checktime.CheckTime(teacherSlotID = row.TeacherSlotID,id=row.ID,totaltimein=row.TOTAL_TIME_IN,totaltimeout=row.TOTAL_TIME_OUT)
         
         return {"data":checktime
                }
@@ -39,7 +39,7 @@ class CheckTimeApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                   UPDATE CheckTime SET TS_ID = '{checktime.tsid}',
+                   UPDATE CheckTime SET TeacherSlotID = '{checktime.teacherSlotID}',
                    TOTAL_TIME_IN='{checktime.totaltimein},
                    TOTAL_TIME_OUT='{checktime.totaltimeout}'
                    WHERE  ID='{checktime.id}'
@@ -64,7 +64,7 @@ class CheckTimeApi:
         cursor.execute(f'''
                 INSERT INTO CheckTime
                 VALUES
-                ('{checktime.tsid}','{checktime.totaltimein}','{checktime.totaltimeout}')
+                ('{checktime.teacherSlotID}','{checktime.totaltimein}','{checktime.totaltimeout}')
                 ''')
 
         return {"data":"okay"}

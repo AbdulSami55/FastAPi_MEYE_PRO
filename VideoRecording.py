@@ -110,9 +110,9 @@ class RTSPVideoWriterObject(object):
                         totaltimein += int(sec / 60)
                     totaltimeout = overalltimemin-totaltimein
                     checktime_object =  apichecktime.CheckTimeApi(checktime=mchecktime)
-                    ctime = mchecktime.CheckTime(id=0,tsid=self.slotid,totaltimein=totaltimein,totaltimeout=totaltimeout)
+                    ctime = mchecktime.CheckTime(id=0,teacherSlotID=self.slotid,totaltimein=totaltimein,totaltimeout=totaltimeout)
                     checktime_object.add_checktime(checktime=ctime)
-                    checktime =checktime_object.checksingletime_details(tsid=self.slotid)
+                    checktime =checktime_object.checksingletime_details(teacherSlotID=self.slotid)
                     checktimedata = checktime['data']
                     teacherslot_object = apiteacherslots.TeacherSlots(teacherslots=mteacherslots)
                     if totaltimein==0:
@@ -124,7 +124,7 @@ class RTSPVideoWriterObject(object):
                         teacherslot_object.update_teacherslots_details(self.teacher_slot)
                     for (timein,timeout) in zip(lsttimein,lsttimeout):
                         checktimedetails_object =  apichecktimedetails.CheckTimeDetailsApi(checktimedetails=mchecktimedetails)
-                        ctimedetails = mchecktimedetails.CheckTimeDetails(id=0,ctid=checktimedata.id,timein=timein,timeout=timeout)
+                        ctimedetails = mchecktimedetails.CheckTimeDetails(id=0,checkTimeID=checktimedata.id,timein=timein,timeout=timeout)
                         datetime.now()
                         checktimedetails_object.add_checktimedetails(checktimedetails=ctimedetails)   
                     self.sc=0
@@ -181,7 +181,7 @@ class RTSPVideoWriterObject(object):
                 start_video.release()
                 print("done start")
                 
-                recording = mrecordings.Recordings(id=0,tsid=self.slotid,filename=self.fname,date=str(datetime.now().date()))
+                recording = mrecordings.Recordings(id=0,teacherSlotID=self.slotid,filename=self.fname,date=str(datetime.now().date()))
                 rec_obj= apirecordings.RecordingsApi(recordings=mrecordings)
                 rec_obj.add_recordings(recordings=recording)
                 break
@@ -201,7 +201,7 @@ class RTSPVideoWriterObject(object):
             if count == 0:
                 end_video.release()
                 print("done end")
-                recording = mrecordings.Recordings(id=0,tsid=self.slotid,filename=self.fename,date=str(datetime.now().date()))
+                recording = mrecordings.Recordings(id=0,teacherSlotID=self.slotid,filename=self.fename,date=str(datetime.now().date()))
                 rec_obj= apirecordings.RecordingsApi(recordings=mrecordings)
                 rec_obj.add_recordings(recordings=recording)
                 break
@@ -213,7 +213,7 @@ class RTSPVideoWriterObject(object):
             if datetime.now().time() > self.et.time():
                 complete_video.release()
                 print("done complete")
-                recording = mrecordings.Recordings(id=0,tsid=self.slotid,filename=self.fcname,date=str(datetime.now().date()))
+                recording = mrecordings.Recordings(id=0,teacherSlotID=self.slotid,filename=self.fcname,date=str(datetime.now().date()))
                 rec_obj= apirecordings.RecordingsApi(recordings=mrecordings)
                 rec_obj.add_recordings(recordings=recording)
                 break

@@ -14,9 +14,9 @@ class UserApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.user.User(id=row.ID,uid=row.UID,
-                                 name=row.NAME,password=row.PASS,
-                                 image=row.IMAGE,role=row.ROLE))
+            lst.append(self.user.User(id=row.ID,userID=row.UserID,
+                                 name=row.Name,password=row.Password,
+                                 image=row.Image,role=row.Role))
     
         return {"data":lst}
     
@@ -29,7 +29,7 @@ class UserApi:
                     ''')
         user=None
         for row in cursor.fetchall():
-            user = self.user.User(id=row.ID,uid=row.UID,
+            user = self.user.User(id=row.ID,userID=row.UserID,
                                  name=row.NAME,password=row.PASS,
                                  image=row.IMAGE,role=row.ROLE)
     
@@ -41,9 +41,9 @@ class UserApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                   UPDATE MEYE_USER SET UID = '{user.uid}',
-                   NAME='{user.name}',PASS='{user.password}' ,
-                   IMAGE={user.image},ROLE={user.role}
+                   UPDATE MEYE_USER SET UserID = '{user.userID}',
+                   Name='{user.name}',Password='{user.password}' ,
+                   Image={user.image},Role={user.role}
                    WHERE ID ='{user.id}' ''')
     
         return {"data":user}
@@ -64,7 +64,7 @@ class UserApi:
             cursor.execute(f'''
                     INSERT INTO MEYE_USER
                     VALUES
-                    ('{user.uid}','{user.name}','{user.password}','{user.image}','{user.role.value}')
+                    ('{user.userID}','{user.name}','{user.password}','{user.image}','{user.role.value}')
                     ''')
             return {"data":"okay"
                     }

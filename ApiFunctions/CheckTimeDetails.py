@@ -16,7 +16,7 @@ class CheckTimeDetailsApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.checktimedetails.CheckTimeDetails(ctid = row.CT_ID,id=row.ID,timein=row.TIME_IN,timeout=row.TIME_OUT))
+            lst.append(self.checktimedetails.CheckTimeDetails(checkTimeID = row.CheckTimeID,id=row.ID,timein=row.TIME_IN,timeout=row.TIME_OUT))
         
         return {"data":lst
                }
@@ -25,7 +25,7 @@ class CheckTimeDetailsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                   UPDATE CheckTimeDetails SET CT_ID = '{checktimedetails.ctid}',
+                   UPDATE CheckTimeDetails SET CheckTimeID = '{checktimedetails.checkTimeID}',
                    TIME_IN='{checktimedetails.timein},
                    TIME_OUT='{checktimedetails.timeout}'
                    WHERE  ID='{checktimedetails.id}'
@@ -54,7 +54,7 @@ class CheckTimeDetailsApi:
         cursor.execute(f'''
                 INSERT INTO CHECKTIMEDETAILS
                 VALUES
-                ('{checktimedetails.ctid}','{t}','{t1}')
+                ('{checktimedetails.checkTimeID}','{t}','{t1}')
                 ''')
 
         return {"data":"okay"}

@@ -25,23 +25,23 @@ class TimeTableApi:
             et = row.END_TIME.split(':')
             st = f'{st[0]}:{st[1]}'
             et = f'{et[0]}:{et[1]}'
-            timetable = self.timetable.TimeTable(id=row.ID,sec_id=row.SEC_ID
+            timetable = self.timetable.TimeTable(id=row.ID,sectionID=row.SectionID
                                                 ,starttime=st,
                                                 endtime=et,
-                                                day=row.DAY,cid=row.C_ID,
-                                                vid=row.V_ID)
+                                                day=row.DAY,courseID=row.CourseID,
+                                                venueID=row.VenueID)
             cursor.execute(f'''
-                SELECT * FROM SECTION WHERE ID='{row.SEC_ID}'
+                SELECT * FROM SECTION WHERE ID='{row.SectionID}'
                     ''')
             for i in  cursor.fetchall():
                 section = msection.Section(id=i.ID,name=i.NAME)
             cursor.execute(f'''
-                SELECT * FROM COURSE WHERE ID='{row.C_ID}'
+                SELECT * FROM COURSE WHERE ID='{row.CourseID}'
                     ''')
             for i in  cursor.fetchall():
-                course = mcourse.Course(id=i.ID,cid=i.CID,cr_hr=i.CR_HOURS,name=i.NAME)
+                course = mcourse.Course(id=i.ID,courseID=i.CourseID,creditHours=i.CreditHours,name=i.Name)
             cursor.execute(f'''
-                SELECT * FROM VENUE WHERE ID='{row.V_ID}'
+                SELECT * FROM VENUE WHERE ID='{row.VenueID}'
                     ''')
             for i in  cursor.fetchall():
                 venue = mvenue.Venue(id=i.ID,name=i.NAME)
@@ -57,8 +57,8 @@ class TimeTableApi:
         cursor = sql.conn.cursor()
         cursor.execute(f'''
                    UPDATE TIMETABLE SET
-                   SEC_ID='{timetable.sec_id}' , START_TIME='{timetable.starttime}',
-                   END_TIME='{timetable.endtime}',DAY='{timetable.day}',C_ID='{timetable.cid}',V_ID='{timetable.vid}'
+                   SectionID='{timetable.sectionID}' , START_TIME='{timetable.starttime}',
+                   END_TIME='{timetable.endtime}',DAY='{timetable.day}',CourseID='{timetable.courseID}',VenueID='{timetable.venueID}'
                    WHERE ID ='{timetable.id}' 
                    ''')
     
@@ -84,7 +84,7 @@ class TimeTableApi:
                     SELECT * FROM TIMETABLE WHERE
                 START_TIME='{stime_object}' AND END_TIME =
                 '{etime_object}'
-               AND DAY='{day}' AND V_ID='{timetable.vid}'
+               AND DAY='{day}' AND VenueID='{timetable.venueID}'
                     ''')
         count =0
         for row in cursor.fetchall():
@@ -95,8 +95,8 @@ class TimeTableApi:
                         INSERT INTO TIMETABLE
                         VALUES
                         (
-                    '{timetable.sec_id}' , '{stime_object}',
-                    '{etime_object}','{timetable.cid}','{day}','{timetable.vid}')
+                    '{timetable.sectionID}' , '{stime_object}',
+                    '{etime_object}','{timetable.courseID}','{day}','{timetable.venueID}')
                         ''')
                 return {"data":"okay"}
                 
@@ -120,11 +120,11 @@ class TimeTableApi:
                 et = row.END_TIME.split(':')
                 st = f'{st[0]}:{st[1]}'
                 et = f'{et[0]}:{et[1]}'
-                lsttimetable.append(self.timetable.TimeTable(id=row.ID,sec_id=row.SEC_ID
+                lsttimetable.append(self.timetable.TimeTable(id=row.ID,sectionID=row.SectionID
                                                     ,starttime=st,
                                                     endtime=et,
-                                                    day=row.DAY,cid=row.C_ID,
-                                                    vid=row.V_ID))
+                                                    day=row.DAY,courseID=row.CourseID,
+                                                    venueID=row.VenueID))
             return lsttimetable
         except:
             return [] 

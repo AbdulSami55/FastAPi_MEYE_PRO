@@ -2,18 +2,32 @@
 <html>
     <head>
         <title>Live Streaming</title>
+       
     </head>
     <body>
+        <button id='btn' onClick="showImage()">join</button>
         <img id="frame" src="">
         <script>
-            let ws = new WebSocket("ws://192.168.0.114:8000/1/ws");
-            let image = document.getElementById("frame");
-            image.onload = function(){
-                URL.revokeObjectURL(this.src); // release the blob URL once the image is loaded
-            } 
-            ws.onmessage = function(event) {
-                image.src = URL.createObjectURL(event.data);
-            };
+            const showImage = () => {
+                let ws = new WebSocket("ws://192.168.43.192:8000/1/ws");
+                    let image = document.getElementById("frame");
+                    document.getElementById('btn').style.display= 'none';
+                    image.onload = function(){
+                        URL.revokeObjectURL(this.src); // release the blob URL once the image is loaded
+                    } 
+                    ws.onmessage = function(event) {
+                        image.src = URL.createObjectURL(event.data);
+                    };
+            }
         </script>
+          
+
+                
+               
+                
+          
+        
+       
     </body>
+    
 </html>

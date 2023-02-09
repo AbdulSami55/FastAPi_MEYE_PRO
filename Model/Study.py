@@ -3,5 +3,5 @@ from pydantic import BaseModel
 
 class Study(BaseModel):
     id:int
-    thid:int
+    teachID:int
     eid:int

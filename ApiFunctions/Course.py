@@ -15,8 +15,8 @@ class CourseApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.course.Course(name=row.NAME,id=row.ID,
-                                          cid=row.CID,cr_hr=row.CR_HOURS))
+            lst.append(self.course.Course(name=row.Name,id=row.ID,
+                                          courseID=row.CourseID,creditHours=row.CreditHours))
 
         
         return {"data":lst}
@@ -26,8 +26,8 @@ class CourseApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                   UPDATE COURSE SET CID = '{course.cid}',
-                   CR_HOURS='{course.cr_hr}' ,  NAME='{course.name}'
+                   UPDATE COURSE SET CourseID = '{course.courseID}',
+                   CreditHours='{course.creditHours}' ,  Name='{course.name}'
                    WHERE  ID='{course.id}'
                    ''')
     
@@ -49,6 +49,6 @@ class CourseApi:
         cursor.execute(f'''
                 INSERT INTO COURSE
                 VALUES
-                ('{course.cid}','{course.cr_hr}','{course.name}')
+                ('{course.courseID}','{course.creditHours}','{course.name}')
                 ''')
         return {"data":"okay"}

@@ -4,6 +4,6 @@ from datetime import datetime
 
 class CheckTimeDetails(BaseModel):
     id:int
-    ctid:int
+    checkTimeID:int
     timein:datetime
     timeout:datetime
