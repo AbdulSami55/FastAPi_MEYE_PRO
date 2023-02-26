@@ -1,12 +1,13 @@
 from enum import Enum
+from typing import Optional
 from pydantic import BaseModel
 
 class Day(Enum):
-    DAY_1 = 'Mon'
-    DAY_2 = 'Tue'
-    DAY_3 = 'Wed'
-    DAY_4 = 'Thu'
-    DAY_5 = 'Fri'
+    DAY_1 = 'Monday'
+    DAY_2 = 'Tuesday'
+    DAY_3 = 'Wednesday'
+    DAY_4 = 'Thursday'
+    DAY_5 = 'Friday'
 
 class StartTime(Enum):
     TIME_1 = '08:30'
@@ -24,10 +25,14 @@ class EndTime(Enum):
     
 class TimeTable(BaseModel):
     id : int
-    sectionID : int
+    discipline : str
     starttime : StartTime
     endtime : EndTime
     day:Day
-    courseID:int 
-    venueID:int   
+    courseCode:str
+    courseName:str
+    venue:str  
+    teacherName:str 
+    sessionId:Optional[str]=None
+    sessionName:Optional[str]=None
     

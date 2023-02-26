@@ -63,13 +63,13 @@ class TeachApi:
                         WHERE ID=
                         '{teach.timeTableID}'
                         ''')
-                courseID=-1
+                courseCode=-1
                 for row in cursor.fetchall():
-                   courseID = row.CourseID
+                   courseCode = row.CourseID
                 cursor.execute(f'''
                         SELECT * FROM COURSE
                         WHERE ID=
-                        '{courseID}'
+                        '{courseCode}'
                         ''')
                 cr_hour=-1
                 for row in cursor.fetchall():

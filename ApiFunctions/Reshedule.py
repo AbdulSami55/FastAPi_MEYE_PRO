@@ -22,7 +22,7 @@ class RescheduleApi:
             lsttimetable.append(mtimetable.TimeTable(id=row.ID,sectionID=row.SectionID
                                                 ,starttime=st,
                                                 endtime=et,
-                                                day=row.DAY,courseID=row.CourseID,
+                                                day=row.DAY,courseCode=row.CourseID,
                                                 venueID=row.VenueID))
        
         # self.conn.commit()
@@ -103,7 +103,7 @@ class RescheduleApi:
                     lsttimetable.append(mtimetable.TimeTable(id=row.ID,sectionID=row.SectionID
                                                         ,starttime=st,
                                                         endtime=et,
-                                                        day=row.DAY,courseID=row.CourseID,
+                                                        day=row.DAY,courseCode=row.CourseID,
                                                         venueID=row.VenueID))
             cursor.execute(f'''
                     SELECT * FROM RESCHEDULE WHERE DATE >= '{startdate}' AND DATE <= '{enddate}' AND STATUS =0
@@ -114,7 +114,7 @@ class RescheduleApi:
                 st = f'{st[0]}:{st[1]}'
                 et = f'{et[0]}:{et[1]}'
                 secid = 0
-                courseID = 0
+                courseCode = 0
                 sql1 = MySQL()
                 sql1.__enter__()
                 cursor1 = sql1.conn.cursor()
@@ -131,12 +131,12 @@ class RescheduleApi:
                                 ''')
                         for timetabledata in cursor1.fetchall():
                             secid=timetabledata.SectionID
-                            courseID = timetabledata.CourseID
+                            courseCode = timetabledata.CourseID
                 lsttimetable.append(self.timetable.TimeTable(id=-1,sectionID=secid
                                                     ,starttime=st,
                                                     endtime=et,
                                                     day=row.DAY,
-                                                    courseID=courseID,
+                                                    courseCode=courseCode,
                                                     venueID=row.VenueID))
             return lsttimetable
         except ZeroDivisionError:

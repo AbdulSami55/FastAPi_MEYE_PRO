@@ -15,7 +15,7 @@ class EnrollApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.enroll.Enroll(courseID=row.CourseID,studentID=row.StudentID,id=row.ID))
+            lst.append(self.enroll.Enroll(courseCode=row.CourseID,studentID=row.StudentID,id=row.ID))
 
     
         return {"data":lst
@@ -26,7 +26,7 @@ class EnrollApi:
         cursor = sql.conn.cursor()
         cursor.execute(f'''
                    UPDATE ENROLL SET 
-                   CourseID='{enroll.courseID}' ,  StudentID='{enroll.studentID}'
+                   CourseID='{enroll.courseCode}' ,  StudentID='{enroll.studentID}'
                    WHERE  ID='{enroll.id}'
                    ''')
         return {"data":enroll}
@@ -46,6 +46,6 @@ class EnrollApi:
         cursor.execute(f'''
                 INSERT INTO ENROLL
                 VALUES
-                ('{enroll.courseID}','{enroll.studentID}')
+                ('{enroll.courseCode}','{enroll.studentID}')
                 ''')
         return {"data":"okay"}

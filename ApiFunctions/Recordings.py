@@ -59,9 +59,9 @@ class RecordingsApi:
                                                     filename=row[6],
                                                     date=str(row[7])))
                 lsttimetable.append(mtimetable.TimeTable(id=row[8],sectionID=row[9],starttime = st,
-                                                        endtime=et,day=row[13],courseID=row[12],venueID=row[14]))
+                                                        endtime=et,day=row[13],courseCode=row[12],venueID=row[14]))
                 lstsection.append(msection.Section(id=row[15],name=row[16]))
-                lstcourse.append(mcourse.Course(id=row[17],courseID=row[18],creditHours=row[19],name=row[20]))
+                lstcourse.append(mcourse.Course(id=row[17],courseCode=row[18],creditHours=row[19],name=row[20]))
                 lstvenue.append(mvenue.Venue(id=row[21],name=row[22]))
         return {"teacherslot":lstteacherslot,
                 "recordings":lstrecordings,

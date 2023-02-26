@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 from datetime import datetime, timedelta
+import os
 from pathlib import Path
 import threading
 from typing import List
@@ -36,13 +37,18 @@ import Model.Reschedule as mreschedule
 import ApiFunctions.Reshedule as apireschedule
 import Model.Rules as mrules
 import Model.TeacherSlots as mteacherslots
+import ApiFunctions.Offered_Courses as apiOfferedCourses
+import Model.Offered_Courses as mOfferedCourses
+import ApiFunctions.Section_Offer as apiSectionOffer
+import Model.Section_Offer as mSectionOffer
 import nest_asyncio
 from VideoRecording import RTSPVideoWriterObject
+from parse_excel import Parse_Excel
 from sql import MySQL
 from fastapi.responses import HTMLResponse
 nest_asyncio.apply()
 
-networkip = '192.168.43.192'
+networkip = '192.168.0.118'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -265,7 +271,6 @@ def adduser(user : muser.User=Depends(),file: UploadFile = File(...)):
         # return {"data":image_encoding.tolist()}
         return user_object.add_user(user=user)
     except Exception:
-        print(Exception)
         return {"data": "There was an error uploading the file"}
     finally:
         file.file.close()
@@ -311,18 +316,33 @@ def deletecoursedetails(course : mcourse.Course):
 #---------------------------------TimeTable---------------------------------
 
 @app.post('/api/add-timetable') 
-def addtimetable(timetable : mtimetable.TimeTable):
-    return timetable_object.add_timetable(timetable=timetable)
+def addtimetable(file: UploadFile = File(...)):
+    try:
+        contents = file.file.read()
+        path=f"{file.filename}"
+        with open(path, 'wb') as f:
+            f.write(contents)
+        Parse_Excel.parse_excel(path)
+        return {
+            "data":"TimeTable Updated"
+        }
+    except Exception:
+        print(Exception.args)
+        return {"data": "There was an error uploading the file"}
+    finally:
+        os.remove(path)
+        file.file.close()
+        
 
-@app.get('/api/timetable-details/{timetableid}') 
-def timetabledetails(timetableid: int):
-    return timetable_object.timetable_details(timetableid=timetableid)
+@app.get('/api/timetable-details') 
+def timetabledetails():
+    return timetable_object.timetable_details()
     
 @app.put('/api/update-timetable-details') 
 def updatetimetabledetails(timetable : mtimetable.TimeTable):
     return timetable_object.update_timetable_details(timetable=timetable)
     
-    
+   
 @app.delete('/api/delete-timetable-details') 
 def deletetimetabledetails(timetable : mtimetable.TimeTable):
     return timetable_object.delete_timetable_details(timetable=timetable)
@@ -474,7 +494,15 @@ def updaterescheduledetails(reschedule : mreschedule.Reschedule):
 def deleterescheduledetails(reschedule : mreschedule.Reschedule):
     return reschedule_object.delete_reschedule_details(reschedule=reschedule)
 
+#----------------------------------------------SECTION OFFER------------------------------------------
+@app.get('/api/section-offer-details') 
+def sectionOfferDetails():
+    return sectionOffer_object.SectionOffer_Details()
 
+#----------------------------------------------OFFERED COURSES------------------------------------------
+@app.get('/api/offered-courses-details') 
+def offeredCoursesDetails():
+    return offeredCourses_object.OfferedCourses_Details()
         
 if __name__=='__main__':
     
@@ -490,6 +518,8 @@ if __name__=='__main__':
     study_object = apistudy.StudyApi(study=mstudy)
     recordings_object = apirecordings.RecordingsApi(recordings=mrecordings)
     reschedule_object = apireschedule.RescheduleApi(reschedule=mreschedule)
+    sectionOffer_object = apiSectionOffer.SectionOfferApi(sectionOffer=mSectionOffer)
+    offeredCourses_object = apiOfferedCourses.OfferedCoursesApi(offeredCourses=mOfferedCourses)
     uvicorn.run(app, host=networkip,port=networkport)
     
     

@@ -2,5 +2,5 @@ from pydantic import BaseModel
 
 class Enroll(BaseModel):
     id:int
-    courseID:int
+    courseCode:int
     studentID:int
