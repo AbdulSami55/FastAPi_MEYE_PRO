@@ -1,3 +1,4 @@
+import os
 import pyodbc
 
 from sql import MySQL
@@ -18,20 +19,20 @@ class UserApi:
                                  name=row.Name,password=row.Password,
                                  image=row.Image,role=row.Role))
     
-        return {"data":lst}
+        return lst
     
-    def single_user_details(self,userid):
+    def single_user_details(self,teacherName):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM MEYE_USER WHERE ID='{userid}'
+                SELECT * FROM MEYE_USER WHERE Name='{teacherName}'
                     ''')
         user=None
         for row in cursor.fetchall():
             user = self.user.User(id=row.ID,userID=row.UserID,
-                                 name=row.NAME,password=row.PASS,
-                                 image=row.IMAGE,role=row.ROLE)
+                                 name=row.Name,password=row.Password,
+                                 image=row.Image,role=row.Role)
     
         return {"data":user}
     
@@ -58,16 +59,28 @@ class UserApi:
         return {"data":"okay"}
     def add_user(self,user):
         try:
+            count=0
             sql = MySQL()
             sql.__enter__()
             cursor = sql.conn.cursor()
             cursor.execute(f'''
-                    INSERT INTO MEYE_USER
-                    VALUES
-                    ('{user.userID}','{user.name}','{user.password}','{user.image}','{user.role.value}')
+                    SELECT COUNT(UserId) as 'count' From MEYE_USER Where UserId='{user.userID}'
                     ''')
-            return {"data":"okay"
-                    }
+            for row in cursor.fetchall():
+                count=row.count
+            if count==0:
+                cursor.execute(f'''
+                        INSERT INTO MEYE_USER
+                        VALUES
+                        ('{user.userID}','{user.name}','{user.password}','{user.image}','{user.role.value}')
+                        ''')
+                
+                return {"data":"okay"
+                        }
+            else:
+                os.remove(f'UserImages/Teacher/{user.image}')
+                return {"data":"ae"}
+            
         except pyodbc.Error as ex:
             sqlstate = ex.args[0]
             if sqlstate == '23000':

@@ -3,7 +3,8 @@ from pydantic import BaseModel
 class OfferedCourse(BaseModel):
     id:int
     sessionId:int
-    courseId: int
+    courseCode:str
+    courseName:str
 
 class OfferedCourseDetails(BaseModel):
     courseName:str

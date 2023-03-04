@@ -5,8 +5,6 @@ import ApiFunctions.TimeTable as apiTimeTable
 import Model.Venue as mVenue
 import ApiFunctions.Venue as apiVenue
 from sql import MySQL
-import ApiFunctions.Course as apiCourse
-import Model.Course as mCourse
 import ApiFunctions.Offered_Courses as apiOfferedCourses
 import Model.Offered_Courses as mOfferedCourses
 import ApiFunctions.Section_Offer as apiSectionOffer
@@ -110,44 +108,33 @@ class Parse_Excel:
             tempVenue.id=0
             venue_object.add_venue(venue=tempVenue) 
              
-        course_object = apiCourse.CourseApi(course=mCourse)
+        offeredCourseObject = apiOfferedCourses.OfferedCoursesApi(offeredCourses=mOfferedCourses)
         cursor.execute(f'''
-               SELECT DISTINCT TIMETABLE.CourseCode,
-               TIMETABLE.CourseName FROM TIMETABLE
+               SELECT DISTINCT TIMETABLE.CourseName,TIMETABLE.CourseCode,TIMETABLE.SessionId FROM TIMETABLE WHERE 
+                TIMETABLE.SessionId=  (SELECT TOP 1 SESSION.ID 
+                FROM SESSION ORDER BY ID DESC)
                 ''')
         for courseData in cursor.fetchall():
-            tempCourse = mCourse.Course
+            tempCourse = mOfferedCourses.OfferedCourse
             tempCourse.courseName = courseData.CourseName
             tempCourse.courseCode=courseData.CourseCode
             tempCourse.id=0
-            course_object.add_course(course=tempCourse)
+            tempCourse.sessionId = courseData.SessionId
+            offeredCourseObject.add_offeredCourses(offeredCourses=tempCourse)
             
-        offeredCourseObject = apiOfferedCourses.OfferedCoursesApi(offeredCourses=mOfferedCourses)
-        cursor.execute(
-            f'''
-            SELECT DISTINCT COURSE.ID, TIMETABLE.SessionId FROM TIMETABLE 
-            INNER JOIN COURSE ON TIMETABLE.CourseCode=Course.CourseCode AND TIMETABLE.SessionId=
-            (SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
-            '''
-            )
-        for offeredCourseData in cursor.fetchall():
-            tempOfferedCourse = mOfferedCourses.OfferedCourse
-            tempOfferedCourse.courseId=offeredCourseData.ID
-            tempOfferedCourse.sessionId=offeredCourseData.SessionId
-            offeredCourseObject.add_offeredCourses(offeredCourses=tempOfferedCourse)
-            
+         
         sectionOfferObject = apiSectionOffer.SectionOfferApi(sectionOffer=mSectionOffer)
         cursor.execute(
             f'''
-            SELECT DISTINCT oc.ID as 'OfferedCourseID', COURSE.ID as 'CourseId', TIMETABLE.SessionId, TIMETABLE.Discipline FROM TIMETABLE 
-            INNER JOIN COURSE ON TIMETABLE.CourseCode=Course.CourseCode INNER JOIN OFFERED_COURSES oc ON oc.CourseId=COURSE.ID 
-            AND oc.SessionId = TIMETABLE.SessionId
-            AND TIMETABLE.SessionId=(SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
+            SELECT DISTINCT oc.ID, t.Discipline FROM OFFERED_COURSES oc INNER JOIN TIMETABLE t ON
+            t.SessionId=oc.SessionId AND oc.CourseCode = t.CourseCode AND oc.CourseName=t.CourseName AND t.SessionId=
+            (SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
+
             '''
             )
         for sectionOfferData in cursor.fetchall():
             tempSectionOffer = mSectionOffer.SectionOffer
-            tempSectionOffer.courseOfferId=sectionOfferData.OfferedCourseID
+            tempSectionOffer.courseOfferId=sectionOfferData.ID
             tempSectionOffer.discipline=sectionOfferData.Discipline
             sectionOfferObject.add_SectionOffer(sectionOffer=tempSectionOffer)
         

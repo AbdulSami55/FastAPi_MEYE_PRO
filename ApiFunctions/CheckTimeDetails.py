@@ -16,7 +16,7 @@ class CheckTimeDetailsApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.checktimedetails.CheckTimeDetails(checkTimeID = row.CheckTimeID,id=row.ID,timein=row.TIME_IN,timeout=row.TIME_OUT))
+            lst.append(self.checktimedetails.CheckTimeDetails(checkTimeID = row.CheckTimeId,id=row.ID,timein=row.TimeIn,timeout=row.TimeOut))
         
         return {"data":lst
                }

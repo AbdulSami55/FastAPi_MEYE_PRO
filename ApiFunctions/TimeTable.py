@@ -28,10 +28,9 @@ class TimeTableApi:
                                                 venue=row.Venue,
                                                 teacherName=row.TeacherName,
                                                 courseName=row.CourseName,
-                                                sessionName=row.Name,
                                                 sessionId=row.SessionId))
             
-        return {"data":lstTimeTable}
+        return lstTimeTable
     def update_timetable_details(self,timetable):
         sql = MySQL()
         sql.__enter__()
@@ -93,5 +92,57 @@ class TimeTableApi:
                     return {"data":"error"}
         else:
             return {"data":"ae"}
+    
+    def getTeacherTimeTable(self,teacherName):
+        sql = MySQL()
+        sql.__enter__()
+        cursor = sql.conn.cursor()
+        cursor.execute(f'''                     
+                       SELECT * FROM TIMETABLE WHERE TeacherName Like '%{teacherName}%' AND SessionId=
+                       (SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
+                       ''')
+        lstTimeTable=[]
+        for row in cursor.fetchall():
+            st = row.StartTime.split(':')
+            et = row.EndTime.split(':')
+            st = f'{st[0]}:{st[1]}'
+            et = f'{et[0]}:{et[1]}'
+            lstTimeTable.append(self.timetable.TimeTable(id=row.ID,discipline=row.Discipline
+                                                ,starttime=st,
+                                                endtime=et,
+                                                day=row.Day,courseCode=row.CourseCode,
+                                                venue=row.Venue,
+                                                teacherName=row.TeacherName,
+                                                courseName=row.CourseName,
+                                                sessionName="",
+                                                sessionId=row.SessionId))
+        return lstTimeTable
+    
+    def getTempTimeTableDetails(self):
+        sql = MySQL()
+        sql.__enter__()
+        cursor = sql.conn.cursor()
+        cursor.execute(f'''
+                SELECT * FROM TEMPORARY_TIMETABLE
+                    ''')
+        lstTimeTable = []   
+        for row in cursor.fetchall():
+            st = row.StartTime.split(':')
+            et = row.EndTime.split(':')
+            st = f'{st[0]}:{st[1]}'
+            et = f'{et[0]}:{et[1]}'
+            lstTimeTable.append(self.timetable.TempTimeTable(id=row.ID,discipline=row.Discipline
+                                                ,starttime=st,
+                                                endtime=et,
+                                                day=row.Day,courseCode=row.CourseCode,
+                                                venue=row.Venue,
+                                                teacherName=row.TeacherName,
+                                                courseName=row.CourseName,
+                                                sessionId=row.SessionId,
+                                                startRecord=row.StartRecord,
+                                                endRecord=row.EndRecord,
+                                                fullRecord=row.FullRecord))
+            
+        return lstTimeTable
         
     

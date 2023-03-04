@@ -36,3 +36,18 @@ class TimeTable(BaseModel):
     sessionId:Optional[str]=None
     sessionName:Optional[str]=None
     
+class TempTimeTable(BaseModel):
+    id : int
+    discipline : str
+    starttime : StartTime
+    endtime : EndTime
+    day:Day
+    courseCode:str
+    courseName:str
+    venue:str  
+    teacherName:str 
+    sessionId:Optional[str]=None
+    startRecord:bool
+    endRecord:bool
+    fullRecord:bool
+    

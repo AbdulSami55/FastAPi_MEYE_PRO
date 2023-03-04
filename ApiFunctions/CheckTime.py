@@ -25,11 +25,11 @@ class CheckTimeApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM CheckTime WHERE TeacherSlotID='{teacherSlotID}'
+                SELECT * FROM CheckTime WHERE TeacherSlotId='{teacherSlotID}'
                     ''')
         checktime=None
         for row in cursor.fetchall():
-            checktime = self.checktime.CheckTime(teacherSlotID = row.TeacherSlotID,id=row.ID,totaltimein=row.TOTAL_TIME_IN,totaltimeout=row.TOTAL_TIME_OUT)
+            checktime = self.checktime.CheckTime(teacherSlotID = row.TeacherSlotId,id=row.ID,totaltimein=row.TotalTimeIn,totaltimeout=row.TotalTimeOut)
         
         return {"data":checktime
                }

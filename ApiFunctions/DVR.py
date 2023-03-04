@@ -17,7 +17,7 @@ class DVRApi:
         lstdvr=[]
         for row in cursor.fetchall():
             lstdvr.append(self.dvr.DVR(id=row.ID,ip=row.IP,channel=row.CHANNEL,host=row.HOST,password=row.PASSWORD,name=row.NAME))
-        return {"data":lstdvr}
+        return lstdvr
     
     def update_dvr_details(self,dvr):
         sql = MySQL()

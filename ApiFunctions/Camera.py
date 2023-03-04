@@ -15,7 +15,7 @@ class CameraApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-           lst.append(self.cam.Camera(id=row.ID,dvrID=row.DvrID,venueID=row.VenueID,portNumber=row.PortNumber))
+           lst.append(self.cam.Camera(id=row.ID,dvrID=row.DvrID,venueID=row.VenueId,portNumber=row.PortNumber))
         
         return {"data":lst}
         

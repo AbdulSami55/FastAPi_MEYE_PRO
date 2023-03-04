@@ -8,15 +8,12 @@ from typing import List
 from fastapi import Depends, FastAPI, Header, Request, Response, WebSocket, WebSocketDisconnect,File, UploadFile
 from pydantic import BaseModel
 import uvicorn
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse,StreamingResponse
 import cv2
 import Model.DVR as mdvr
 import Model.User as muser
 import ApiFunctions.DVR as apidvr
 import ApiFunctions.User as apiuser
-import ApiFunctions.Course as apicourse
-import Model.Course as mcourse
 import Model.TimeTable as mtimetable
 import ApiFunctions.TimeTable as apitimetable
 import Model.Camera as mcamera
@@ -41,6 +38,7 @@ import ApiFunctions.Offered_Courses as apiOfferedCourses
 import Model.Offered_Courses as mOfferedCourses
 import ApiFunctions.Section_Offer as apiSectionOffer
 import Model.Section_Offer as mSectionOffer
+import ApiFunctions.TeacherSlots as apiteacherslots
 import nest_asyncio
 from VideoRecording import RTSPVideoWriterObject
 from parse_excel import Parse_Excel
@@ -48,7 +46,7 @@ from sql import MySQL
 from fastapi.responses import HTMLResponse
 nest_asyncio.apply()
 
-networkip = '192.168.0.118'
+networkip = '192.168.0.124'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -93,24 +91,24 @@ async def video_endpoint(range: str = Header(None),path:str=None):
 #---------------------------Camera-----------------------------------------
 
     
-def connect(websocket,count):
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        async def  connect(websocket,count):
-            await websocket.accept()
-            camera = cv2.VideoCapture('rtsp://192.168.43.1:8000/h264_ulaw.sdp')
-            # if count==1:
-            #     camera = cv2.VideoCapture('rtsp://192.168.43.228:8080/h264_ulaw.sdp')
-            #     count+=1
-            # else:
-            #     camera = cv2.VideoCapture('rtsp://192.168.43.118:8080/h264_ulaw.sdp')
-            while True:
-                success, frame = camera.read()
-                if not success:
-                    break
-                else:
-                    ret, buffer = cv2.imencode('.jpg', frame)
-                    await websocket.send_bytes(buffer.tobytes()) 
-        asyncio.get_event_loop().run_until_complete(connect(websocket,count))
+# def connect(websocket,count):
+#         asyncio.set_event_loop(asyncio.new_event_loop())
+#         async def  connect(websocket,count):
+#             await websocket.accept()
+#             camera = cv2.VideoCapture('rtsp://192.168.235.103:8080/h264_ulaw.sdp')
+#             # if count==1:
+#             #     camera = cv2.VideoCapture('rtsp://192.168.43.228:8080/h264_ulaw.sdp')
+#             #     count+=1
+#             # else:
+#             #     camera = cv2.VideoCapture('rtsp://192.168.43.118:8080/h264_ulaw.sdp')
+#             while True:
+#                 success, frame = camera.read()
+#                 if not success:
+#                     break
+#                 else:
+#                     ret, buffer = cv2.imencode('.jpg', frame)
+#                     await websocket.send_bytes(buffer.tobytes()) 
+#         asyncio.get_event_loop().run_until_complete(connect(websocket,count))
         
 # async def  connect1(websocket,count):
 #         await websocket.accept()
@@ -127,13 +125,13 @@ def connect(websocket,count):
 #                 ret, buffer = cv2.imencode('.jpg', frame)
 #                 await websocket.send_bytes(buffer.tobytes()) 
 
-@app.websocket("/{count}/ws")
-async def get_stream(websocket: WebSocket,count: int):
-    try:
-        connect(websocket,count)
-        # Thread(target=asyncio.run,args=(connect1(websocket=websocket,count=count))).start()
-    except WebSocketDisconnect:
-        print("Client disconnected")   
+# @app.websocket("/{count}/ws")
+# async def get_stream(websocket: WebSocket,count: int):
+#     try:
+#         connect(websocket,count)
+#         # Thread(target=asyncio.run,args=(connect1(websocket=websocket,count=count))).start()
+#     except WebSocketDisconnect:
+#         print("Client disconnected")   
 
 
 #------------------------------------------------Video Recordings----------------------------------------------------------------
@@ -156,13 +154,34 @@ def getvideo(id:str,record:str):
     return StreamingResponse(iterfile(id,record), media_type="multipart/x-mixed-replace;boundary=frame")
 
 
-def cam(ip, s, e, f,stime,etime,day,teacher_slot,teacher_id):
+def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
+    teacherslot_object = apiteacherslots.TeacherSlots(teacherslots=mteacherslots)
+    teacherSlot = mteacherslots.TeacherSlot
+    teacherSlot.id=0
+    teacherSlot.timetableId=timetableId
+    teacherSlot.status="Not Held"
+    teacherSlot.slot=0
+    lst = teacherslot_object.teacherslots_details(timetableId=timetableId)
+    for i in lst:
+        teacherSlot.slot=i.slot
+    teacherSlot.slot=teacherSlot.slot+1
+    teacherslot_object.add_teacherslots(teacherslots=teacherSlot)
+    sql = MySQL()
+    sql.__enter__()
+    cursor = sql.conn.cursor()
+    cursor.execute(f'''
+            SELECT ID FROM TeacherSlots WHERE TimeTableId='{timetableId}'
+            AND Slot='{teacherSlot.slot}'
+                ''')
+    slotid=-1
+    for row in cursor.fetchall():
+        slotid=row.ID
     st = datetime.now()
     et = st + timedelta(minutes=2)
     stime= st
     etime =  et
-    print(ip, s, e, f,stime,etime,day,teacher_slot)
-    video_stream_widget = RTSPVideoWriterObject(ip, s, e, f,stime, etime,day,teacher_slot,teacher_id)
+    print(ip, s, e, f,stime,etime,day,teacherName)
+    video_stream_widget = RTSPVideoWriterObject(ip, s, e, f,stime, etime,day,teacherName,timetableId,slotid)
     while True:
         try:
             video_stream_widget.show_frame()
@@ -172,48 +191,18 @@ def cam(ip, s, e, f,stime,etime,day,teacher_slot,teacher_id):
         
 @app.get('/stream')
 def start_stream():
-    lsttm =  timetable_object.getalltimetable()
     sql = MySQL()
     sql.__enter__()
     cursor = sql.conn.cursor()
-    for timetable in lsttm:
-        if timetable.id ==11:
-            cursor.execute(f'''
-                    SELECT * FROM CAMERA WHERE VenueID='{timetable.venueID}'
-                        ''')
-            for row in cursor.fetchall():
-                cursor.execute(f'''
-                    SELECT * FROM DVR WHERE ID='{row.DvrID}'
-                        ''')
-                dvrip=''
-                for dvrrow in cursor.fetchall():
-                    dvrip=dvrrow.IP
-                cursor.execute(f'''
-                        SELECT * FROM TEACH WHERE TimeTableID='{timetable.id}'
-                            ''')
-                lst=[]
-                teacher_id=-1
-                for row in cursor.fetchall():
-                    lst.append(mteach.Teach(id=row.ID,timeTableID=row.TimeTableID,teacherID=row.TeacherID))
-                    teacher_id = row.TeacherID
-                for teach in lst:
-                    cursor.execute(f'''
-                            SELECT * FROM RULES WHERE TeachID='{teach.id}'
-                                ''')
-                    rules=None
-                    for row in cursor.fetchall():
-                        rules =  mrules.Rules(id=row.ID,teachID=row.TeachID,start_record=row.START_RECORD,end_record=row.END_RECORD,full_record=row.FULL_RECORD)
-                    cursor.execute(f'''
-                            SELECT * FROM TEACHERSLOTS WHERE TeachID='{teach.id}'
-                                ''') 
-                    teacher_slot=None
-                    for row in cursor.fetchall():
-                        if row.STATUS == 0:
-                            teacher_slot = mteacherslots.TeacherSlot(id=row.ID,teachID=row.TeachID,slot=row.SLOT,status=row.STATUS)
-                            break
-                    
-                    t1 = threading.Thread(target=cam, args=(f'rtsp://{dvrip}:8000/h264_ulaw.sdp', rules.start_record, rules.end_record, rules.full_record,timetable.starttime,timetable.endtime,timetable.day.value,teacher_slot,teacher_id))
-                    t1.start()
+    cursor.execute(f'''
+                   SELECT * FROM TEMPORARY_TIMETABLE  INNER JOIN 
+                   TIMETABLE t On TEMPORARY_TIMETABLE.TimeTableId = t.ID 
+                   Inner Join VENUE v On t.Venue=v.NAME INNER JOIN CAMERA 
+                   C ON  C.VenueId = v.ID INNER JOIN DVR d ON d.ID=C.DvrID
+                   ''')
+    for timetable in cursor.fetchall():
+        t1 = threading.Thread(target=cam, args=(f'rtsp://{timetable.IP}:8080/h264_ulaw.sdp', timetable.StartRecord, timetable.EndRecord, timetable.FullRecord,timetable.StartTime,timetable.EndTime,timetable.Day,timetable.TeacherName,timetable.TimeTableId))
+        t1.start()
     
 
 #---------------------------DVR-----------------------------------------
@@ -266,9 +255,6 @@ def adduser(user : muser.User=Depends(),file: UploadFile = File(...)):
         with open(path, 'wb') as f:
             f.write(contents)
         user.image = file.filename
-        # image =  face_recognition.load_image_file(path)
-        # image_encoding = face_recognition.face_encodings(image)[0]
-        # return {"data":image_encoding.tolist()}
         return user_object.add_user(user=user)
     except Exception:
         return {"data": "There was an error uploading the file"}
@@ -294,23 +280,6 @@ def updateuserdetails(user : muser.User):
 def deleteuserdetails(user : muser.User):
     return user_object.delete_user_details(user=user)
 
-#---------------------------------COURSE---------------------------------
-@app.post('/api/add-course') 
-def addcourse(course : mcourse.Course):
-    return course_object.add_course(course=course)
-
-@app.get('/api/course-details') 
-def coursedetails():
-    return course_object.course_details()
-    
-@app.put('/api/update-course-details') 
-def updatecoursedetails(course : mcourse.Course):
-    return course_object.update_course_details(course=course)
-    
-    
-@app.delete('/api/delete-course-details') 
-def deletecoursedetails(course : mcourse.Course):
-    return course_object.delete_course_details(course=course)
 
 
 #---------------------------------TimeTable---------------------------------
@@ -337,6 +306,11 @@ def addtimetable(file: UploadFile = File(...)):
 @app.get('/api/timetable-details') 
 def timetabledetails():
     return timetable_object.timetable_details()
+
+
+@app.get('/api/teacher-timetable-details/{teacherName}') 
+def timetabledetails(teacherName : str):
+    return timetable_object.getTeacherTimeTable(teacherName=teacherName)
     
 @app.put('/api/update-timetable-details') 
 def updatetimetabledetails(timetable : mtimetable.TimeTable):
@@ -509,7 +483,6 @@ if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
     camera_object =  apicamera.CameraApi(cam=mcamera)
     user_object = apiuser.UserApi(user=muser)
-    course_object = apicourse.CourseApi(course=mcourse)
     timetable_object = apitimetable.TimeTableApi(timetable=mtimetable)
     enroll_object = apienroll.EnrollApi(enroll=menroll)
     venue_object = apivenue.VenueApi(venue=mvenue)

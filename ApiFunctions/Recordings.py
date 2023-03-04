@@ -6,7 +6,7 @@ import Model.Recordings as mrecordings
 import Model.TimeTable as mtimetable 
 import Model.Section as msection
 import Model.Venue as mvenue
-import Model.Course as mcourse
+
 
 class RecordingsApi:
     def __init__(self,recordings) -> None:
@@ -61,7 +61,7 @@ class RecordingsApi:
                 lsttimetable.append(mtimetable.TimeTable(id=row[8],sectionID=row[9],starttime = st,
                                                         endtime=et,day=row[13],courseCode=row[12],venueID=row[14]))
                 lstsection.append(msection.Section(id=row[15],name=row[16]))
-                lstcourse.append(mcourse.Course(id=row[17],courseCode=row[18],creditHours=row[19],name=row[20]))
+                
                 lstvenue.append(mvenue.Venue(id=row[21],name=row[22]))
         return {"teacherslot":lstteacherslot,
                 "recordings":lstrecordings,

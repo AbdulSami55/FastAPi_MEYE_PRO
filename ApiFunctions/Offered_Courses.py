@@ -14,7 +14,7 @@ class OfferedCoursesApi:
         cursor.execute(
             f'''
             INSERT INTO OFFERED_COURSES VALUES
-            ('{offeredCourses.sessionId}','{offeredCourses.courseId}')
+            ('{offeredCourses.sessionId}','{offeredCourses.courseCode}','{offeredCourses.courseName}')
             '''
         )
     def OfferedCourses_Details(self):
@@ -23,10 +23,11 @@ class OfferedCoursesApi:
         cursor = sql.conn.cursor()
         cursor.execute(
             f'''
-            SELECT c.CourseCode,c.CourseName,s.Name
+            SELECT oc.CourseCode,oc.CourseName,s.Name
             FROM OFFERED_COURSES oc 
-            INNER JOIN COURSE c ON c.ID=oc.CourseId 
             INNER JOIN SESSION S ON oc.SessionId=S.ID 
+            AND oc.SessionId=
+            (SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
             '''
         )
         lstOfferedCourses =[]

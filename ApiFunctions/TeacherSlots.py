@@ -5,18 +5,18 @@ class TeacherSlots:
     def __init__(self,teacherslots) -> None:
         self.teacherslots = teacherslots
         
-    def teacherslots_details(self,teacherid):
+    def teacherslots_details(self,timetableId):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM TeacherSlots WHERE TeachID='{teacherid}'
+                SELECT * FROM TeacherSlots WHERE TimeTableId='{timetableId}'
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.teacherslots.TeacherSlots(id=row.ID,teachID=row.TeachID,slot=row.SLOT,status=row.STATUS))
+            lst.append(self.teacherslots.TeacherSlot(id=row.ID,timetableId=row.TimeTableId,slot=row.Slot,status=row.Status))
             
-        return {"data":lst}
+        return lst
     def update_teacherslots_details(self,teacherslots):
         sql = MySQL()
         sql.__enter__()
@@ -43,7 +43,7 @@ class TeacherSlots:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                           INSERT INTO TEACHERSLOTS VALUES('{teacherslots.id}','{teacherslots.teachID}'
+                           INSERT INTO TEACHERSLOTS VALUES ('{teacherslots.timetableId}'
                            ,'{teacherslots.slot}','{teacherslots.status}')
                             ''')
         
