@@ -83,16 +83,18 @@ class RTSPVideoWriterObject(object):
                         self.totalteachertimeframes=0
                         self.teachertimeinframes=0
                         self.teachertimeoutframes=0
-                    if self.tempFrameCount>30:
-                        if self._key_lock.locked():
-                            pass
-                        else:
-                            self.thread2 = threading.Thread(target=self.check_time_using_facial_recognition, args=())
-                            self.thread2.daemon = True
-                            self.thread2.start()
+                    if self.tempFrameCount>2:
+                        # if self._key_lock.locked():
+                        #     print("locked")
+                        #     pass
+                        # else:
+                        self.thread2 = threading.Thread(target=self.check_time_using_facial_recognition, args=())
+                        self.thread2.daemon = True
+                        self.thread2.start()
                         #self.check_time_using_facial_recognition(tempFrame=tempFrame)
                     else:
                         self.tempFrameCount+=1
+                        
                         
                     
                 if self.sc==1 and datetime.now().time()>self.et.time():
@@ -141,7 +143,7 @@ class RTSPVideoWriterObject(object):
                         teacherSlot.slot = self.slotId
                         teacherslot_object.update_teacherslots_details(teacherslots=teacherSlot)
                     else:
-                        if totaltimeout>20:
+                        if totaltimeout>=1:
                             teacherSlot = mteacherslots.TeacherSlot
                             teacherSlot.id=0
                             teacherSlot.timetableId=self.timetableId
@@ -275,7 +277,6 @@ class RTSPVideoWriterObject(object):
         #     break
     def check_time_using_facial_recognition(self):
         self._key_lock.acquire()
-    
         self.tempFrameCount=0
         temp_image_path = f'temp{self.timetableId}.JPG'
         cv2.imwrite(temp_image_path,self.frame)

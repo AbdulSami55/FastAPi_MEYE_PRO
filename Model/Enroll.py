@@ -1,6 +1,7 @@
+from typing import List
 from pydantic import BaseModel
 
 class Enroll(BaseModel):
     id:int
-    courseCode:int
-    studentID:int
+    sectionOfferId:List[int]
+    studentID:str

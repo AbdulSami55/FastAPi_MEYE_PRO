@@ -49,3 +49,16 @@ class EnrollApi:
                 ('{enroll.courseCode}','{enroll.studentID}')
                 ''')
         return {"data":"okay"}
+    
+    def student_enroll(self,enroll):
+        sql = MySQL()
+        sql.__enter__() 
+        cursor = sql.conn.cursor()
+        for i in enroll:
+            for data in i.sectionOfferId:
+                cursor.execute(f'''
+                    INSERT INTO ENROLL
+                    VALUES
+                    ('{data}','{i.studentID}')
+                    ''')
+        return "Enrolled Succesfully"

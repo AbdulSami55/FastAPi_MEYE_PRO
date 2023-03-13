@@ -22,7 +22,7 @@ class TeacherSlots:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                   UPDATE TEACHERSLOTS SET STATUS = '{teacherslots.status}'
+                   UPDATE TEACHERSLOTS SET Status = '{teacherslots.status}'
                    WHERE  ID = '{teacherslots.id}' 
                    ''')
     

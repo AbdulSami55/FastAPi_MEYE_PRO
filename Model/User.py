@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 
 class Role(Enum):
@@ -14,3 +14,10 @@ class User(BaseModel):
     image:Optional[str] = None
     password:str
     role:Role
+
+class Student(BaseModel):
+    aridNo:str
+    name:str
+    image:str
+    password:str
+

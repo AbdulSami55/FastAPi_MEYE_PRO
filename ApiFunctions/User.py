@@ -69,23 +69,40 @@ class UserApi:
             for row in cursor.fetchall():
                 count=row.count
             if count==0:
-                cursor.execute(f'''
+                try:
+                    cursor.execute(f'''
+                        INSERT INTO MEYE_USER
+                        VALUES
+                        ('{user.userID}','{user.name}','{user.password}','{user.image}','{user.role}')
+                        ''')
+                except:
+                    cursor.execute(f'''
                         INSERT INTO MEYE_USER
                         VALUES
                         ('{user.userID}','{user.name}','{user.password}','{user.image}','{user.role.value}')
                         ''')
                 
-                return {"data":"okay"
-                        }
+                return "Added"
             else:
-                os.remove(f'UserImages/Teacher/{user.image}')
-                return {"data":"ae"}
+                cursor.execute(f'''
+                    SELECT Image  From MEYE_USER Where UserId='{user.userID}'
+                    ''')
+                image=''
+                for row in cursor.fetchall():
+                    image=row.Image
+                if image!=user.image:
+                    try:
+                        os.remove(f'UserImages/{user.role.value}/{user.image}')
+                    except:
+                        os.remove(f'UserImages/{user.role}/{user.image}')
+                return "Already Exists"
             
         except pyodbc.Error as ex:
             sqlstate = ex.args[0]
             if sqlstate == '23000':
-                return {"data":"ae"}
+                return "Already Exists"
             else:
-                return {"data":"error"}
+                return "Error"
+    
                 
         

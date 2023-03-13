@@ -27,48 +27,30 @@ class RecordingsApi:
         
         return {"data":lst}
     
-    def recordings_details_byteacherid(self,teacherid):
+    def recordings_details_byteacherid(self,teacherName):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
-        lstteacherslot=[]
-        lstrecordings=[]
-        lsttimetable=[]
-        lstsection=[]
-        lstcourse=[]
-        lstvenue=[]
-        cursor.execute(f"SELECT * FROM TEACH WHERE TeacherID='{teacherid}'")
-        for teachid in cursor.fetchall():
-            tempcursor = sql.conn.cursor()
-            tempcursor.execute(f'''
-                    SELECT TS.*,R.*,TM.*,S.*,C.*,V.* FROM MEYE_USER TEACHER, 
-                    TEACHERSLOTS TS INNER JOIN RECORDINGS R ON  R.TeacherSlotID=TS.ID , TEACH TH INNER JOIN  TIMETABLE TM ON TM.ID=TH.TimeTableID 
-                    INNER JOIN SECTION S ON TM.SectionID=S.ID INNER JOIN VENUE V ON TM.VenueID=V.ID INNER JOIN COURSE C ON TM.CourseID=C.ID
-                    WHERE TH.TeacherID='{teacherid}' AND TEACHER.ID='{teacherid}' AND TS.STATUS!=0
-                    AND TS.TeachID={teachid.ID}
-                        ''')
-            
-            
-            for row in tempcursor.fetchall():
-                st = row[10].split(':')
-                et = row[11].split(':')
-                st = f'{st[0]}:{st[1]}'
-                et = f'{et[0]}:{et[1]}'
-                lstteacherslot.append(mteacherslots.TeacherSlot(id=row[0],teachID=row[1],slot=row[2],status=row[3]))
-                lstrecordings.append(self.recordings.Recordings(id=row[4],teacherSlotID=row[5],
-                                                    filename=row[6],
-                                                    date=str(row[7])))
-                lsttimetable.append(mtimetable.TimeTable(id=row[8],sectionID=row[9],starttime = st,
-                                                        endtime=et,day=row[13],courseCode=row[12],venueID=row[14]))
-                lstsection.append(msection.Section(id=row[15],name=row[16]))
-                
-                lstvenue.append(mvenue.Venue(id=row[21],name=row[22]))
-        return {"teacherslot":lstteacherslot,
-                "recordings":lstrecordings,
-                "timetable":lsttimetable,
-                "section":lstsection,
-                "course":lstcourse,
-                "venue":lstvenue}
+        cursor.execute(f'''
+                   SELECT  t.CourseCode,t.CourseName,t.TeacherName,t.Discipline,
+                   t.Venue,t.Day,t.StartTime,t.EndTime,r.DATE,ts.Status,ts.Slot,r.FILENAME 
+                   FROM TIMETABLE t INNER JOIN TEACHERSLOTS ts 
+                   ON t.ID=ts.TimeTableId INNER JOIN RECORDINGS r on r.TeacherSlotId=ts.ID AND t.SessionId
+                  =(SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC) AND t.TeacherName='{teacherName}'
+                   ''')
+        lstRecording=[]
+        for row in cursor.fetchall():
+            st = row.StartTime.split(':')
+            et = row.EndTime.split(':')
+            st = f'{st[0]}:{st[1]}'
+            et = f'{et[0]}:{et[1]}'
+            date = str(row.DATE).split(' ')[0]
+            lstRecording.append(self.recordings.Recordings(courseCode=row.CourseCode,courseName=row.CourseName,
+                                                           teacherName=row.TeacherName,discipline=row.Discipline,
+                                venue = row.Venue,day=row.Day,startTime=st,endTime=et,
+                                date=date,status=row.Status,slot=row.Slot,fileName=row.FILENAME))
+        return lstRecording
+        
     
     def update_recordings_details(self,recordings):
         sql = MySQL()
@@ -84,6 +66,7 @@ class RecordingsApi:
         return {
                 "data":recordings
                 }
+        
     def delete_recordings_details(self,recordings):
         sql = MySQL()
         sql.__enter__()

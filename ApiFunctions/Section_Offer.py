@@ -23,18 +23,20 @@ class SectionOfferApi:
         cursor = sql.conn.cursor()
         cursor.execute(
             f'''
-            SELECT oc.CourseName,oc.CourseCode,
+            SELECT so.ID,oc.CourseName,oc.CourseCode,
             so.Discipline FROM SECTION_OFFER so 
             INNER JOIN OFFERED_COURSES oc 
             ON so.CourseOfferId=oc.ID 
             AND oc.SessionId=
             (SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
+
             '''
         )
         lstSectionOffer =[]
         for row in cursor.fetchall():
             lstSectionOffer.append(SectionOfferDetails(courseCode=row.CourseCode,
                                                        courseName=row.CourseName,
-                                                       discipline=row.Discipline))
-        return {"data":lstSectionOffer}
+                                                       discipline=row.Discipline,
+                                                       id=row.ID))
+        return lstSectionOffer
         

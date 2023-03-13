@@ -7,6 +7,7 @@ class SectionOffer(BaseModel):
     discipline:str
 
 class SectionOfferDetails(BaseModel):
+    id:int
     courseName:str
     courseCode:str
     discipline:str
