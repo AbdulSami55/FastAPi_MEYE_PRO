@@ -1,11 +1,10 @@
-import asyncio
 import datetime
 from datetime import datetime, timedelta
 import os
 from pathlib import Path
 import threading
 from typing import List
-from fastapi import Depends, FastAPI, Header, Request, Response, WebSocket, WebSocketDisconnect,File, UploadFile
+from fastapi import Depends, FastAPI, Header, Response,File, UploadFile
 from pydantic import BaseModel
 import uvicorn
 from fastapi.responses import FileResponse,StreamingResponse
@@ -24,32 +23,42 @@ import Model.Section as msection
 import ApiFunctions.Section as apisection
 import Model.Venue as mvenue
 import ApiFunctions.Venue as apivenue
-import Model.Teach as mteach
-import ApiFunctions.Teach as apiteach
-import Model.Study as mstudy
-import ApiFunctions.Study as apistudy
 import Model.Recordings as mrecordings
 import ApiFunctions.Recordings as apirecordings
 import Model.Reschedule as mreschedule
 import ApiFunctions.Reshedule as apireschedule
-import Model.Rules as mrules
 import Model.TeacherSlots as mteacherslots
 import ApiFunctions.Offered_Courses as apiOfferedCourses
 import Model.Offered_Courses as mOfferedCourses
 import ApiFunctions.Section_Offer as apiSectionOffer
 import Model.Section_Offer as mSectionOffer
 import ApiFunctions.TeacherSlots as apiteacherslots
-import nest_asyncio
+import ApiFunctions.Student as apiStudent
+# import nest_asyncio
 from VideoRecording import RTSPVideoWriterObject
 from parse_excel import Parse_Excel
 from sql import MySQL
-from fastapi.responses import HTMLResponse
-nest_asyncio.apply()
+from fastapi.middleware.cors import CORSMiddleware
+import face_recognition
 
-networkip = '192.168.0.124'
+# nest_asyncio.apply()
+
+networkip = '192.168.0.111'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
+
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
 
 # templates = Jinja2Templates(directory="templates")
 # @app.get("/", response_class=HTMLResponse)
@@ -58,12 +67,12 @@ app = FastAPI()
 
 
 # CHUNK_SIZE = 1024*1024
-# file_path = "Recordings/file,33,complete_recording.mp4"
+file_path = "Recordings/file,63,complete_recording.mp4"
 
 
 # @app.get("/video")
 # async def video_feed():
-#    return FileResponse(file_path)
+#    return FileResponse("Recordings/file,64,start_recording.mp4")
 
 CHUNK_SIZE = 1024*1024
 
@@ -84,8 +93,15 @@ async def video_endpoint(range: str = Header(None),path:str=None):
         data = video.read(end - start)
         filesize = str(video_path.stat().st_size)
         headers = {
+            "content-type": "video/mp4",
+            "content-encoding": "identity",
             'Content-Range': f'bytes {str(start)}-{str(end)}/{filesize}',
-            'Accept-Ranges': 'bytes'
+            'Accept-Ranges': 'bytes',
+            "content-length"  : filesize,
+            "access-control-expose-headers": (
+            "content-type, accept-ranges, content-length, "
+            "content-range, content-encoding"
+        ),
         }
         return Response(data, status_code=206, headers=headers, media_type="video/mp4")
 #---------------------------Camera-----------------------------------------
@@ -280,7 +296,38 @@ def updateuserdetails(user : muser.User):
 def deleteuserdetails(user : muser.User):
     return user_object.delete_user_details(user=user)
 
+#----------------------------------------Student----------------------------
 
+@app.post('/api/add-student')
+def addStudent(student: muser.Student=Depends(),file: UploadFile = File(...)):
+    try:
+        contents = file.file.read()
+        path=f"UserImages/Student/{file.filename}"
+        with open(path, 'wb') as f:
+            f.write(contents)
+        student.image = file.filename
+        test_image =  face_recognition.load_image_file(path)
+        face_locations = face_recognition.face_locations(test_image)
+        face_encodings = face_recognition.face_encodings(test_image,face_locations)
+        return student_object.addStudent(student=student)
+    except Exception:
+        os.remove(f'UserImages/Student/{student.image}')
+        return {"data": "There was an error uploading the file"}
+    finally:
+        file.file.close()
+        
+@app.get('/api/student-details')
+def studentDetails():
+    return student_object.studentDetails()
+
+@app.get('/api/get-student-image/UserImages/Student/{imagename}') 
+def getuserimage(imagename:str):
+    return FileResponse(f'UserImages/Student/{imagename}')
+
+@app.post('/api/student-offered-courses')
+def studentCourseOffered(studentCourseOffered: List[str]):
+    return student_object.studentCourseOffered(studentCourseOffered=studentCourseOffered)
+    
 
 #---------------------------------TimeTable---------------------------------
 
@@ -326,6 +373,10 @@ def deletetimetabledetails(timetable : mtimetable.TimeTable):
 @app.post('/api/add-enroll') 
 def addenroll(enroll : menroll.Enroll):
     return enroll_object.add_enroll(enroll=enroll)
+
+@app.post('/api/student-enroll') 
+async def enrollStudent(enroll : List[menroll.Enroll]):
+    return enroll_object.student_enroll(enroll=enroll)
 
 @app.get('/api/enroll-details') 
 def enrolldetails():
@@ -377,44 +428,6 @@ def updatesectiondetails(section : msection.Section):
 def deletesectiondetails(section : msection.Section):
     return section_object.delete_section_details(section=section)
 
-#---------------------------------Teach---------------------------------
-@app.post('/api/add-teach') 
-def addteach(teach : mteach.Teach):
-    return teach_object.add_teach(teach=teach)
-
-@app.get('/api/teach-details/{teacherid}') 
-def teachdetails(teacherid:int):
-    return teach_object.teach_details(teacherid=teacherid)
-    
-@app.put('/api/update-teach-details') 
-def updateteachdetails(teach : mteach.Teach):
-    return teach_object.update_teach_details(teach=teach)
-    
-   
-@app.delete('/api/delete-teach-details') 
-def deleteteachdetails(teach : mteach.Teach):
-    return teach_object.delete_teach_details(teach=teach)
-
-
-#---------------------------------Study---------------------------------
-
-@app.post('/api/add-study') 
-def addstudy(study : mstudy.Study):
-    return study_object.add_study(study=study)
-
-@app.get('/api/study-details') 
-def studydetails():
-    return study_object.study_details()
-    
-@app.put('/api/update-study-details') 
-def updatestudydetails(study : mstudy.Study):
-    return study_object.update_study_details(study=study)
-    
-    
-@app.delete('/api/delete-study-details') 
-def deletestudydetails(study : mstudy.Study):
-    return study_object.delete_study_details(study=study)
-
 #---------------------------------Recordings---------------------------------
 @app.post('/api/add-recordings') 
 def addrecordings(recordings : mrecordings.Recordings):
@@ -424,9 +437,9 @@ def addrecordings(recordings : mrecordings.Recordings):
 def recordingsdetails():
     return recordings_object.recordings_details()
 
-@app.get('/api/recordings-details-by-teacherid/{teacherid}') 
-def recordingsdetailsbyteacherid(teacherid:int):
-    return recordings_object.recordings_details_byteacherid(teacherid=teacherid)
+@app.get('/api/recordings-details-by-teachername/{teacherName}') 
+def recordingsdetailsbyteacherid(teacherName:str):
+    return recordings_object.recordings_details_byteacherid(teacherName=teacherName)
 
   
 @app.put('/api/update-recordings-details') 
@@ -477,9 +490,9 @@ def sectionOfferDetails():
 @app.get('/api/offered-courses-details') 
 def offeredCoursesDetails():
     return offeredCourses_object.OfferedCourses_Details()
+
         
 if __name__=='__main__':
-    
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
     camera_object =  apicamera.CameraApi(cam=mcamera)
     user_object = apiuser.UserApi(user=muser)
@@ -487,12 +500,12 @@ if __name__=='__main__':
     enroll_object = apienroll.EnrollApi(enroll=menroll)
     venue_object = apivenue.VenueApi(venue=mvenue)
     section_object = apisection.SectionApi(section=msection)
-    teach_object = apiteach.TeachApi(teach=mteach)
     study_object = apistudy.StudyApi(study=mstudy)
     recordings_object = apirecordings.RecordingsApi(recordings=mrecordings)
     reschedule_object = apireschedule.RescheduleApi(reschedule=mreschedule)
     sectionOffer_object = apiSectionOffer.SectionOfferApi(sectionOffer=mSectionOffer)
     offeredCourses_object = apiOfferedCourses.OfferedCoursesApi(offeredCourses=mOfferedCourses)
+    student_object = apiStudent.StudentApi(student=muser)
     uvicorn.run(app, host=networkip,port=networkport)
     
     
