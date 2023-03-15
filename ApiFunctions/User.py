@@ -123,25 +123,4 @@ class UserApi:
             return "Invalid Password"
         return "User Not Found"
     
-    def detail(self,userId,password):
-        sql = MySQL()
-        sql.__enter__()
-        cursor = sql.conn.cursor()
-        cursor.execute(f'''
-                SELECT * FROM MEYE_USER WHERE UserID='{userId}'
-                    ''')
-        
-        for data in cursor.fetchall():
-            cursor.execute(f'''
-                SELECT * FROM MEYE_USER WHERE UserID='{userId}' and Password='{password}'
-                    ''')
-            for user in cursor.fetchall():
-               return self.user.User(id=user.ID,userID=user.UserID,
-                                 name=user.Name,password=user.Password,
-                                 image=user.Image,role=user.Role)
-            return "Invalid Password"
-        return "User Not Found"
-             
     
-                
-        
