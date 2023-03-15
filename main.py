@@ -500,7 +500,6 @@ if __name__=='__main__':
     enroll_object = apienroll.EnrollApi(enroll=menroll)
     venue_object = apivenue.VenueApi(venue=mvenue)
     section_object = apisection.SectionApi(section=msection)
-    study_object = apistudy.StudyApi(study=mstudy)
     recordings_object = apirecordings.RecordingsApi(recordings=mrecordings)
     reschedule_object = apireschedule.RescheduleApi(reschedule=mreschedule)
     sectionOffer_object = apiSectionOffer.SectionOfferApi(sectionOffer=mSectionOffer)
