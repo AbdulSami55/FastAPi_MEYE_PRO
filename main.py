@@ -43,7 +43,7 @@ import face_recognition
 
 # nest_asyncio.apply()
 
-networkip = '192.168.0.113'
+networkip = '192.168.0.115'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -327,6 +327,10 @@ def getuserimage(imagename:str):
 @app.post('/api/student-offered-courses')
 def studentCourseOffered(studentCourseOffered: List[str]):
     return student_object.studentCourseOffered(studentCourseOffered=studentCourseOffered)
+
+@app.get('/api/get-student-courses')
+def getStudentCourses(aridNumber:str):
+    return student_object.getStudentCourses(aridNumber=aridNumber)
     
 
 #---------------------------------TimeTable---------------------------------
@@ -494,7 +498,7 @@ def offeredCoursesDetails():
 #----------------------------------------------SignIn----------------------------------------------------
 @app.get('/api/signin')
 def signin(userId:str,password:str):
-    user_object.user_details_by_id(userId=userId,password=password)
+    return user_object.user_details_by_id(userId=userId,password=password)
 
         
 if __name__=='__main__':

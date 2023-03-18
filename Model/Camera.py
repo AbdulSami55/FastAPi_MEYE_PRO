@@ -6,3 +6,4 @@ class Camera(BaseModel):
     dvrID:int
     venueID:int
     portNumber:str
+    venueName:str

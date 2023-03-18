@@ -11,11 +11,12 @@ class CameraApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM CAMERA WHERE DvrID ='{dvrID}' 
+                SELECT c.*,v.Name FROM CAMERA c INNER JOIN DVR d ON d.ID=c.DvrID INNER JOIN VENUE v On v.ID=c.VenueId WHERE c.DvrID ='{dvrID}' 
                     ''')
         lst=[]
         for row in cursor.fetchall():
-           lst.append(self.cam.Camera(id=row.ID,dvrID=row.DvrID,venueID=row.VenueId,portNumber=row.PortNumber))
+           lst.append(self.cam.Camera(id=row.ID,dvrID=row.DvrID,venueID=row.VenueId,portNumber=row.PortNumber,
+                                      venueName=row.Name))
         
         return {"data":lst}
         

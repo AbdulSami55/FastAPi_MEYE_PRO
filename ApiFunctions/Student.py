@@ -4,7 +4,7 @@ import Model.User as mUser
 import ApiFunctions.User as apiUser
 
 class StudentApi:
-    def __init__(self,student) -> None:
+    def __init__(self,student:mUser) -> None:
         self.student = student
         
     def studentDetails(self):
@@ -25,15 +25,27 @@ class StudentApi:
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
-        cursor.execute(f'''
+        if len(studentCourseOffered) >1:
+            cursor.execute(f'''
+                SELECT * FROM STUDENT WHERE AridNo NOT IN (SELECT s.AridNo 
+                FROM OFFERED_COURSES oc INNER JOIN SECTION_OFFER so 
+                ON oc.ID=so.CourseOfferId INNER JOIN ENROLL e  ON e.SectionOfferID=so.ID
+                INNER JOIN STUDENT s ON s.AridNo=e.StudentID
+                AND SessionId=(SELECT TOP 1 
+                SESSION.ID FROM SESSION ORDER BY ID DESC)
+                AND oc.CourseName IN {tuple(studentCourseOffered)})
+                        ''')
+        elif len(studentCourseOffered)==1:
+            cursor.execute(f'''
                SELECT * FROM STUDENT WHERE AridNo NOT IN (SELECT s.AridNo 
                FROM OFFERED_COURSES oc INNER JOIN SECTION_OFFER so 
                ON oc.ID=so.CourseOfferId INNER JOIN ENROLL e  ON e.SectionOfferID=so.ID
                INNER JOIN STUDENT s ON s.AridNo=e.StudentID
                AND SessionId=(SELECT TOP 1 
                SESSION.ID FROM SESSION ORDER BY ID DESC)
-               AND oc.CourseName IN {tuple(studentCourseOffered)})
+               AND oc.CourseName='{studentCourseOffered[0]}')
                     ''')
+        
         lst=[]
         for row in cursor.fetchall():
            lst.append(self.student.Student(aridNo=row.AridNo,name=row.Name,
@@ -64,3 +76,39 @@ class StudentApi:
                     ('{student.aridNo}','{student.name}','{student.image}','{student.password}')
                     ''')
         return result
+    
+    def getStudentCourses(self,aridNumber):
+        sql = MySQL()
+        sql.__enter__()
+        cursor = sql.conn.cursor()
+        cursor.execute(f'''
+                SELECT DISTINCT t.TeacherName,oc.CourseName,so.Discipline FROM OFFERED_COURSES oc INNER JOIN TIMETABLE t ON oc.CourseCode=t.CourseCode 
+                AND oc.SessionId=t.SessionId INNER JOIN SECTION_OFFER so ON so.CourseOfferId=oc.ID AND so.Discipline=t.Discipline
+                INNER JOIN ENROLL e ON e.SectionOfferID=so.ID INNER JOIN STUDENT s ON s.AridNo=e.StudentID
+                WHERE t.SessionId=(SELECT TOP 1 
+                SESSION.ID FROM SESSION ORDER BY ID DESC)
+                AND e.StudentID='{aridNumber}' AND t.Venue Like 'Lt%'
+                    ''')
+        lst=[]
+        for row in cursor.fetchall():
+            if row.TeacherName.split(' ')[0]=='Dr.':
+                cursor.execute(
+                    f'''
+                    SELECT Image FROM MEYE_USER Where Name='{row.TeacherName}'
+                    '''
+                )
+            else:
+                cursor.execute(
+                    f'''
+                    SELECT Image FROM MEYE_USER Where Name='Mr {row.TeacherName}'
+                    '''
+                )
+            img=''
+            for data in cursor.fetchall():
+                img=data.Image
+            lst.append(self.student.StudentCourses(teacherName=row.TeacherName,
+                                                courseName=row.CourseName,
+                                                discipline=row.Discipline,
+                                                image=img))
+    
+        return lst

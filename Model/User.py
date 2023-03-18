@@ -20,4 +20,10 @@ class Student(BaseModel):
     name:str
     image:str
     password:str
+    
+class StudentCourses(BaseModel):
+    teacherName:str
+    courseName:str
+    discipline:str
+    image:str
 
