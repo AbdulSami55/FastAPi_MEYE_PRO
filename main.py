@@ -34,6 +34,8 @@ import ApiFunctions.Section_Offer as apiSectionOffer
 import Model.Section_Offer as mSectionOffer
 import ApiFunctions.TeacherSlots as apiteacherslots
 import ApiFunctions.Student as apiStudent
+import ApiFunctions.Attendance as apiAttendance
+import Model.Attendance as mAttendance
 # import nest_asyncio
 from VideoRecording import RTSPVideoWriterObject
 from parse_excel import Parse_Excel
@@ -43,7 +45,7 @@ import face_recognition
 
 # nest_asyncio.apply()
 
-networkip = '192.168.0.115'
+networkip = '192.168.43.192'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -280,7 +282,7 @@ def adduser(user : muser.User=Depends(),file: UploadFile = File(...)):
 
 @app.get('/api/user-details') 
 def userdetails():
-    return user_object.user_details()
+    return user_object.teacher_details()
     
 @app.get('/api/get-user-image/UserImages/{foldername}/{imagename}') 
 def getuserimage(foldername:str,imagename:str):
@@ -500,6 +502,20 @@ def offeredCoursesDetails():
 def signin(userId:str,password:str):
     return user_object.user_details_by_id(userId=userId,password=password)
 
+#----------------------------------------------Attendance------------------------------------------------
+@app.post('/api/mark-attendance') 
+def markAttendance(file: UploadFile = File(...)):
+    try:
+        contents = file.file.read()
+        path=f"{file.filename}" 
+        with open(path, 'wb') as f:
+            f.write(contents)
+        return attendance_object.mark_attendance(img=file.filename)
+    except Exception:
+        return {"data": "There was an error uploading the file"}
+    finally:
+        os.remove(path)
+        file.file.close()
         
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
@@ -514,6 +530,7 @@ if __name__=='__main__':
     sectionOffer_object = apiSectionOffer.SectionOfferApi(sectionOffer=mSectionOffer)
     offeredCourses_object = apiOfferedCourses.OfferedCoursesApi(offeredCourses=mOfferedCourses)
     student_object = apiStudent.StudentApi(student=muser)
+    attendance_object = apiAttendance.AttendanceApi(attendance=mAttendance)
     uvicorn.run(app, host=networkip,port=networkport)
     
     

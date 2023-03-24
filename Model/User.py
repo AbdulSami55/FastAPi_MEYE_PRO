@@ -6,13 +6,14 @@ class Role(Enum):
     ROLE_1 = 'Teacher'
     ROLE_2 = 'Admin'
     ROLE_3 = 'Student'
+    ROLE_4 = 'Director'
 
 class User(BaseModel):
-    id:int
-    userID:str
-    name:str
+    id:Optional[int]=None
+    userID:Optional[str]=None
+    name:Optional[str]=None
     image:Optional[str] = None
-    password:str
+    password:Optional[str]=None
     role:Role
 
 class Student(BaseModel):

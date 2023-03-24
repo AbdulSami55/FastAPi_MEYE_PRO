@@ -6,18 +6,23 @@ class UserApi:
     def __init__(self,user) -> None:
         self.user = user
         
-    def user_details(self):
+    def  teacher_details(self):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM MEYE_USER
+                Select DISTINCT t.TeacherName as 'Name',
+                u.ID,u.Password,u.Image,u.UserID,u.Role 
+                from TIMETABLE t Left Join MEYE_USER u on 
+                u.Name=t.TeacherName Where t.TeacherName not Like '%,%'
+                AND  t.SessionId=(SELECT TOP 1 
+                SESSION.ID FROM SESSION ORDER BY ID DESC)
                     ''')
         lst=[]
         for row in cursor.fetchall():
             lst.append(self.user.User(id=row.ID,userID=row.UserID,
                                  name=row.Name,password=row.Password,
-                                 image=row.Image,role=row.Role))
+                                 image=row.Image,role="Teacher"))
     
         return lst
     

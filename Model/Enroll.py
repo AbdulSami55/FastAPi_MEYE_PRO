@@ -5,3 +5,4 @@ class Enroll(BaseModel):
     id:int
     sectionOfferId:List[int]
     studentID:str
+    discipline:str

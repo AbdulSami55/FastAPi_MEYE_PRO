@@ -1,12 +1,12 @@
-
-
-
 from datetime import datetime
-import face_recognition
+import threading
 import cv2
+import face_recognition
 import numpy as np
 from sql import MySQL
 import Model.Attendance as mattendace
+import os
+
 class AttendanceApi:
     def __init__(self,attendance) -> None:
         self.attendance = attendance
@@ -51,30 +51,50 @@ class AttendanceApi:
         cursor.execute(f'''
                 INSERT INTO ATTENDANCE
                 VALUES
-                ('{attendance.studentid}','{attendance.teacherSlotID}','{attendance.date}','{attendance.status}')
+                ('{attendance.enrollId}','{attendance.status}','{attendance.date}')
                 ''')
         return {"data":"okay"}
     
-    def mark_attendance(self,teacherslot,img):
+    def mark_attendance(self,img):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
-        temp_image_path = f'UserImages/Student'
-
-        test_image =  face_recognition.load_image_file(temp_image_path)
+        # test_image =  face_recognition.load_image_file(img)
+        # face_encodings = face_recognition.face_encodings(test_image)
+        test_image = cv2.imread(img)
+        test_image = cv2.resize(test_image, (0, 0), fx=0.5, fy=0.5)
         face_locations = face_recognition.face_locations(test_image)
         face_encodings = face_recognition.face_encodings(test_image,face_locations)
-        # image_encodings
-        for face_encoding in face_encodings:
-            matches = face_recognition.compare_faces(np.expand_dims(face_encoding,axis=0),face_encoding)
-            if True in matches:
-                self.teachertimeinframes+=1
-            else:
-                self.teachertimeoutframes+=1
-            count=0
+        
         cursor.execute(f'''
-                       SELECT * FROM  STUDY WHERE TeachID='{teacherslot.teachID}'
+                       SELECT  s.*,e.ID FROM TIMETABLE t Inner Join OFFERED_COURSES oc On
+                       oc.CourseCode=t.CourseCode Inner Join SECTION_OFFER so On so.CourseOfferId=oc.ID Inner Join
+                       ENROLL e on e.SectionOfferID=so.ID Inner Join STUDENT s on
+                       s.AridNo = e.StudentID WHERE t.TeacherName='Dr. Hassan' AND
+                       t.Day='Friday' AND t.StartTime='10:00:00.000000'
                        ''')
         for row in cursor.fetchall():
-           
-            self.add_attendance( mattendace.Attendance(id=0,studentid=row.ID,teacherSlotID=teacherslot.id,date=datetime.now(),status=False))
+            self.mark_and_save_attendance(face_encodings,row.Image,row.ID)
+            print(f'''
+                  {row.Name} Attendance Marked
+                  ''')
+        return "Attendance Marked"
+    def mark_and_save_attendance(self,face_encodings,Image,ID):
+        try:
+            image =  face_recognition.load_image_file(f'UserImages/Student/{Image}')
+            image_encodings = face_recognition.face_encodings(image)[0]
+        except:
+            image = cv2.imread(f'UserImages/Student/{Image}')
+            image = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)
+            image_encodings = face_recognition.face_encodings(image)[0]
+        count=0
+        for face_encoding in face_encodings:
+            matches = face_recognition.compare_faces(np.expand_dims(image_encodings,axis=0),face_encoding)
+            if True in matches:
+                count+=1
+                self.add_attendance(mattendace.Attendance(id=0,enrollId=ID,date=str(datetime.now().date()),status=True))
+                break
+        if count==0:
+            self.add_attendance(mattendace.Attendance(id=0,enrollId=ID,date=str(datetime.now().date()),status=False))
+        
+                

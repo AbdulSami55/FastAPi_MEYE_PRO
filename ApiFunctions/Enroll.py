@@ -57,8 +57,15 @@ class EnrollApi:
         for i in enroll:
             for data in i.sectionOfferId:
                 cursor.execute(f'''
-                    INSERT INTO ENROLL
-                    VALUES
-                    ('{data}','{i.studentID}')
-                    ''')
+                                SELECt DISTINCT so.ID as 'SectionOfferId' FROM SECTION_OFFER so Inner Join OFFERED_COURSES oc on 
+                                oc.ID=so.CourseOfferId Inner join TIMETABLE t on t.CourseCode=oc.CourseCode
+                                Where so.ID={data} and t.Discipline='{i.discipline}'
+
+                                ''')
+                for value in cursor.fetchall():
+                    cursor.execute(f'''
+                        INSERT INTO ENROLL
+                        VALUES
+                        ('{value.SectionOfferId}','{i.studentID}')
+                        ''')
         return "Enrolled Succesfully"
