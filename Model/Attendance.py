@@ -5,3 +5,4 @@ class Attendance(BaseModel):
     enrollId :int 
     date : str
     status : bool
+    name:str

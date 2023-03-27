@@ -65,7 +65,7 @@ class AttendanceApi:
         test_image = cv2.resize(test_image, (0, 0), fx=0.5, fy=0.5)
         face_locations = face_recognition.face_locations(test_image)
         face_encodings = face_recognition.face_encodings(test_image,face_locations)
-        
+        lst=[]
         cursor.execute(f'''
                        SELECT  s.*,e.ID FROM TIMETABLE t Inner Join OFFERED_COURSES oc On
                        oc.CourseCode=t.CourseCode Inner Join SECTION_OFFER so On so.CourseOfferId=oc.ID Inner Join
@@ -74,12 +74,12 @@ class AttendanceApi:
                        t.Day='Friday' AND t.StartTime='10:00:00.000000'
                        ''')
         for row in cursor.fetchall():
-            self.mark_and_save_attendance(face_encodings,row.Image,row.ID)
+            lst.append(self.mark_and_save_attendance(face_encodings,row.Image,row.ID,row.Name))
             print(f'''
                   {row.Name} Attendance Marked
                   ''')
-        return "Attendance Marked"
-    def mark_and_save_attendance(self,face_encodings,Image,ID):
+        return lst
+    def mark_and_save_attendance(self,face_encodings,Image,ID,Name):
         try:
             image =  face_recognition.load_image_file(f'UserImages/Student/{Image}')
             image_encodings = face_recognition.face_encodings(image)[0]
@@ -89,12 +89,13 @@ class AttendanceApi:
             image_encodings = face_recognition.face_encodings(image)[0]
         count=0
         for face_encoding in face_encodings:
-            matches = face_recognition.compare_faces(np.expand_dims(image_encodings,axis=0),face_encoding)
+            matches = face_recognition.compare_faces(np.expand_dims(image_encodings,axis=0),face_encoding,tolerance=0.55)
             if True in matches:
+                # print(np.linalg.norm(np.expand_dims(image_encodings,axis=0) - face_encoding, axis=1))
                 count+=1
-                self.add_attendance(mattendace.Attendance(id=0,enrollId=ID,date=str(datetime.now().date()),status=True))
-                break
+                return mattendace.Attendance(id=0,enrollId=ID,date=str(datetime.now().date()),status=True,name=Name)
+                
         if count==0:
-            self.add_attendance(mattendace.Attendance(id=0,enrollId=ID,date=str(datetime.now().date()),status=False))
+            return mattendace.Attendance(id=0,enrollId=ID,date=str(datetime.now().date()),status=False,name=Name)
         
                 
