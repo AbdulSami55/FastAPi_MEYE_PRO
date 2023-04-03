@@ -1,7 +1,7 @@
 
 from pydantic import BaseModel
 
-class Recordings(BaseModel):
+class RecordingsDetail(BaseModel):
     courseCode:str
     courseName:str
     teacherName:str
@@ -14,3 +14,8 @@ class Recordings(BaseModel):
     status:str
     slot:int
     fileName:str
+class Recordings(BaseModel):
+    id:int
+    teacherSlotID:int
+    filename:str
+    date:str

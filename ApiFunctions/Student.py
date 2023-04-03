@@ -91,24 +91,54 @@ class StudentApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            if row.TeacherName.split(' ')[0]=='Dr.':
-                cursor.execute(
-                    f'''
-                    SELECT Image FROM MEYE_USER Where Name='{row.TeacherName}'
-                    '''
-                )
-            else:
-                cursor.execute(
-                    f'''
-                    SELECT Image FROM MEYE_USER Where Name='Mr {row.TeacherName}'
-                    '''
-                )
+            cursor.execute(
+                f'''
+                SELECT Image FROM MEYE_USER Where Name='{row.TeacherName}'
+                '''
+            )
             img=''
+            percentage=0
             for data in cursor.fetchall():
                 img=data.Image
+            cursor.execute(f'''
+                            SELECT oc.CourseName,a.Status,a.Date FROM ATTENDANCE 
+                            a Inner Join Enroll e on a.EnrollId=e.Id 
+                            Inner Join SECTION_OFFER so on so.ID=e.SectionOfferID 
+                            Inner Join OFFERED_COURSES oc on 
+                            oc.ID=so.CourseOfferId  Where 
+                            e.StudentID='{aridNumber}' And CourseName='{row.CourseName}'  
+                            ''')
+            lstAbscent=[]
+            lstAttendance=[]
+            for attendance in cursor.fetchall():
+                lstAttendance.append(attendance.Status)
+                if attendance.Status==0:
+                    lstAbscent.append(0)
+            if len(lstAttendance)>0:
+                percentage=float((len(lstAbscent)/len(lstAttendance)))*100.0
             lst.append(self.student.StudentCourses(teacherName=row.TeacherName,
                                                 courseName=row.CourseName,
                                                 discipline=row.Discipline,
-                                                image=img))
+                                                image=img,
+                                                percentage=percentage))
     
+        return lst
+    def getCourseAttendance(self,aridNumber,courseName):
+        sql = MySQL()
+        sql.__enter__()
+        cursor = sql.conn.cursor()
+        cursor.execute(f'''
+                            SELECT oc.CourseName,a.Status,a.Date FROM ATTENDANCE 
+                            a Inner Join Enroll e on a.EnrollId=e.Id 
+                            Inner Join SECTION_OFFER so on so.ID=e.SectionOfferID 
+                            Inner Join OFFERED_COURSES oc on 
+                            oc.ID=so.CourseOfferId  Where 
+                            e.StudentID='{aridNumber}' And CourseName='{courseName}'  
+                            ''')
+        lst=[]
+        for row in cursor.fetchall():
+            lst.append({
+                'Date':row.Date,
+                'Status':row.Status
+            })
         return lst

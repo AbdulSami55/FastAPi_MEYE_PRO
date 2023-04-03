@@ -27,4 +27,5 @@ class StudentCourses(BaseModel):
     courseName:str
     discipline:str
     image:str
+    percentage:float
 

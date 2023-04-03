@@ -16,7 +16,6 @@ import face_recognition
 import numpy as np
 import Model.TeacherSlots as mteacherslots
 import ApiFunctions.TeacherSlots as apiteacherslots
-cout = 0
 
 class RTSPVideoWriterObject(object):
     def __init__(self,ip, s, e, f,stime,etime,day,teacherName,timetableId,slotId):

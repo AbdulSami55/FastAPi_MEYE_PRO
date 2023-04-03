@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import threading
 from typing import List
-from fastapi import Depends, FastAPI, Header, Response,File, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Header, Response,File, UploadFile
 from pydantic import BaseModel
 import uvicorn
 from fastapi.responses import FileResponse,StreamingResponse
@@ -42,10 +42,12 @@ from parse_excel import Parse_Excel
 from sql import MySQL
 from fastapi.middleware.cors import CORSMiddleware
 import face_recognition
+import requests
+import fcmKey
 
 # nest_asyncio.apply()
 
-networkip = '192.168.0.102'
+networkip = '192.168.0.108'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -78,6 +80,32 @@ file_path = "Recordings/file,63,complete_recording.mp4"
 
 CHUNK_SIZE = 1024*1024
 
+FCM_ENDPOINT = "https://fcm.googleapis.com/fcm/send"
+FCM_SERVER_KEY =fcmKey.key
+
+@app.post("/send-notification/{device_token}")
+async def send_notification(device_token: str, message: str):
+    device_token = "fgHx-IjbQs-max0L3xjOf5:APA91bGMXTbfuFQiTdXHZOsf7Lcm032b4Lx5JhXuhfTNB2lLMtUyHRvikCbTTU2v4DyP7jng6Rva0R3VSXlG-gcC8N48RAFH3cyNw4SKR-MbgZJceN9uU5Jisuh3ex8O6HJlN157NZCZ"
+    payload = {
+        "notification": {
+            "title": "Attendance",
+            "body": message,
+            "click_action": "FLUTTER_NOTIFICATION_CLICK"
+        },
+        "to": device_token
+    }
+
+    headers = {
+        "Authorization": f"key={FCM_SERVER_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(FCM_ENDPOINT, json=payload, headers=headers)
+
+    if response.status_code == 200:
+        return {"message": "Notification sent successfully!"}
+    else:
+        raise HTTPException(status_code=500, detail=f"Error sending notification: {response.text}")
 
 
 
@@ -333,6 +361,10 @@ def studentCourseOffered(studentCourseOffered: List[str]):
 @app.get('/api/get-student-courses')
 def getStudentCourses(aridNumber:str):
     return student_object.getStudentCourses(aridNumber=aridNumber)
+
+@app.get('/api/get-course-attendance')
+def getCourseAttendance(aridNumber:str,courseName:str):
+    return student_object.getCourseAttendance(aridNumber=aridNumber,courseName=courseName)
     
 
 #---------------------------------TimeTable---------------------------------
@@ -516,6 +548,10 @@ def markAttendance(file: UploadFile = File(...)):
     finally:
         os.remove(path)
         file.file.close()
+@app.post('/api/add-attendance')
+async def addAttendance(attendance:List[mAttendance.Attendance]):
+    response =  await attendance_object.add_attendance(attendance=attendance)
+    return response
         
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)

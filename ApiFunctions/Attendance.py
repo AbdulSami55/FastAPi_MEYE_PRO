@@ -1,12 +1,12 @@
 from datetime import datetime
 import threading
+from typing import List
 import cv2
 import face_recognition
 import numpy as np
 from sql import MySQL
 import Model.Attendance as mattendace
-import os
-
+import main 
 class AttendanceApi:
     def __init__(self,attendance) -> None:
         self.attendance = attendance
@@ -44,16 +44,19 @@ class AttendanceApi:
                     ''')
     
         return {"data":"okay"}
-    def add_attendance(self,attendance):
+    async def add_attendance(self,attendance:List[mattendace.Attendance]):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
-        cursor.execute(f'''
-                INSERT INTO ATTENDANCE
-                VALUES
-                ('{attendance.enrollId}','{attendance.status}','{attendance.date}')
-                ''')
-        return {"data":"okay"}
+        for data in attendance:
+            cursor.execute(f'''
+                    INSERT INTO ATTENDANCE
+                    VALUES
+                    ('{data.enrollId}','{data.status}','{data.date}')
+                    ''')
+            if data.status==False:
+                await  main.send_notification("","Absent")
+        return "Attendance Marked"
     
     def mark_attendance(self,img):
         sql = MySQL()

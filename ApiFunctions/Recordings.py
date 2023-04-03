@@ -45,7 +45,7 @@ class RecordingsApi:
             st = f'{st[0]}:{st[1]}'
             et = f'{et[0]}:{et[1]}'
             date = str(row.DATE).split(' ')[0]
-            lstRecording.append(self.recordings.Recordings(courseCode=row.CourseCode,courseName=row.CourseName,
+            lstRecording.append(self.recordings.RecordingsDetail(courseCode=row.CourseCode,courseName=row.CourseName,
                                                            teacherName=row.TeacherName,discipline=row.Discipline,
                                 venue = row.Venue,day=row.Day,startTime=st,endTime=et,
                                 date=date,status=row.Status,slot=row.Slot,fileName=row.FILENAME))
