@@ -7,19 +7,39 @@ class CheckTimeDetailsApi:
     def __init__(self,checktimedetails) -> None:
         self.checktimedetails = checktimedetails
         
-    def checktimedetails_details(self):
+    def getTeacherCHR(self,teacherName):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM CheckTimeDetails
+                SELECT  t.CourseName,t.Day,t.Discipline,t.StartTime,t.EndTime,
+                ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
+                ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
+                CHECKTIME ct Inner Join CHECKTIMEDETAILS ctd on 
+                ct.ID=ctd.CheckTimeId Inner Join 
+                TEACHERSLOTS ts on ts.ID=ct.TeacherSlotId 
+                Inner Join TIMETABLE t on ts.TimeTableId=t.ID
+                Where t.TeacherName='{teacherName}'
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.checktimedetails.CheckTimeDetails(checkTimeID = row.CheckTimeId,id=row.ID,timein=row.TimeIn,timeout=row.TimeOut))
+            lst.append(self.checktimedetails.TeacherCHRDetails(
+                courseName=row.CourseName,
+                day=row.Day,
+                discipline=row.Discipline,
+                startTime=row.StartTime,
+                endTime=row.EndTime,
+                totalTimeIn=row.TotalTimeIn,
+                totalTimeOut=row.TotalTimeOut,
+                timein=row.TimeIn,
+                timeout=row.TimeOut,
+                sit=row.Sit,
+                stand=row.Stand,
+                mobile=row.Mobile,
+                status=row.Status
+            ))
         
-        return {"data":lst
-               }
+        return lst
     def update_checktimedetails_details(self,checktimedetails):
         sql = MySQL()
         sql.__enter__()

@@ -108,14 +108,14 @@ class StudentApi:
                             oc.ID=so.CourseOfferId  Where 
                             e.StudentID='{aridNumber}' And CourseName='{row.CourseName}'  
                             ''')
-            lstAbscent=[]
+            lstPresent=[]
             lstAttendance=[]
             for attendance in cursor.fetchall():
                 lstAttendance.append(attendance.Status)
-                if attendance.Status==0:
-                    lstAbscent.append(0)
+                if attendance.Status==1:
+                    lstPresent.append(0)
             if len(lstAttendance)>0:
-                percentage=float((len(lstAbscent)/len(lstAttendance)))*100.0
+                percentage=float((len(lstPresent)/len(lstAttendance)))*100.0
             lst.append(self.student.StudentCourses(teacherName=row.TeacherName,
                                                 courseName=row.CourseName,
                                                 discipline=row.Discipline,

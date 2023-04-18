@@ -21,7 +21,7 @@ class RecordingsApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.recordings.Recordings(id=row.ID,teacherSlotID=row.TeachID,
+            lst.append(self.recordings.Recordings(id=row.ID,teacherSlotID=row.TeacherSlotId,
                                                   filename=row.FILENAME,
                                                   date=row.DATE))
         

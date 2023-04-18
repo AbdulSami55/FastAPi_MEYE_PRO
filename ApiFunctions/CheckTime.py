@@ -31,8 +31,8 @@ class CheckTimeApi:
         for row in cursor.fetchall():
             checktime = self.checktime.CheckTime(teacherSlotID = row.TeacherSlotId,id=row.ID,totaltimein=row.TotalTimeIn,totaltimeout=row.TotalTimeOut)
         
-        return {"data":checktime
-               }
+        return checktime
+               
         
     def update_checktime_details(self,checktime):
         sql = MySQL()

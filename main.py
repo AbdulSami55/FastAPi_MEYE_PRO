@@ -36,6 +36,8 @@ import ApiFunctions.TeacherSlots as apiteacherslots
 import ApiFunctions.Student as apiStudent
 import ApiFunctions.Attendance as apiAttendance
 import Model.Attendance as mAttendance
+import ApiFunctions.CheckTimeDetails as apiCheckTimeDetails
+import Model.CheckTimeDetails as mCheckTimeDetails
 # import nest_asyncio
 from VideoRecording import RTSPVideoWriterObject
 from parse_excel import Parse_Excel
@@ -44,20 +46,19 @@ from fastapi.middleware.cors import CORSMiddleware
 import face_recognition
 import requests
 import fcmKey
+from ultralytics import YOLO
 
 # nest_asyncio.apply()
 
-networkip = '192.168.0.108'
+networkip = '192.168.43.192'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
-
-
-origins = ["*"]
+model = YOLO('ActivityRecognition/best.pt')
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -183,7 +184,7 @@ async def video_endpoint(range: str = Header(None),path:str=None):
 #------------------------------------------------Video Recordings----------------------------------------------------------------
 
 def iterfile(id,record):
-    video_path=f'Recordings/file,{id},{record}_recording.avi'
+    video_path=f'Recordings/file,{id},{record}_recording.mp4'
     outputFrame = cv2.VideoCapture(video_path)
     while True:
         status,img= outputFrame.read()
@@ -222,12 +223,18 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
     slotid=-1
     for row in cursor.fetchall():
         slotid=row.ID
+    img = cv2.imread('temp895 - Copy.JPG')
+    model.predict(img,stream=True, imgsz=640)
     st = datetime.now()
     et = st + timedelta(minutes=2)
     stime= st
     etime =  et
+    s=0
+    e=0
+    f=0
     print(ip, s, e, f,stime,etime,day,teacherName)
-    video_stream_widget = RTSPVideoWriterObject(ip, s, e, f,stime, etime,day,teacherName,timetableId,slotid)
+    
+    video_stream_widget = RTSPVideoWriterObject(ip, s, e, f,stime, etime,day,teacherName,timetableId,slotid,model)
     while True:
         try:
             video_stream_widget.show_frame()
@@ -552,6 +559,11 @@ def markAttendance(file: UploadFile = File(...)):
 async def addAttendance(attendance:List[mAttendance.Attendance]):
     response =  await attendance_object.add_attendance(attendance=attendance)
     return response
+
+#-----------------------------------------------------------CheckTimeDetails------------------------------------------
+@app.get('/api/get-teacher-chr')
+def getTeacherCHR(teacherName:str):
+    return checkTimeDetails_object.getTeacherCHR(teacherName=teacherName)
         
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
@@ -567,6 +579,7 @@ if __name__=='__main__':
     offeredCourses_object = apiOfferedCourses.OfferedCoursesApi(offeredCourses=mOfferedCourses)
     student_object = apiStudent.StudentApi(student=muser)
     attendance_object = apiAttendance.AttendanceApi(attendance=mAttendance)
+    checkTimeDetails_object = apiCheckTimeDetails.CheckTimeDetailsApi(checktimedetails=mCheckTimeDetails)
     uvicorn.run(app, host=networkip,port=networkport)
     
     

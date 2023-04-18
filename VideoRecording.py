@@ -16,11 +16,13 @@ import face_recognition
 import numpy as np
 import Model.TeacherSlots as mteacherslots
 import ApiFunctions.TeacherSlots as apiteacherslots
+from collections import Counter
+
 
 class RTSPVideoWriterObject(object):
-    def __init__(self,ip, s, e, f,stime,etime,day,teacherName,timetableId,slotId):
-        
-        self.capture = cv2.VideoCapture(ip)
+    def __init__(self,ip, s, e, f,stime,etime,day,teacherName,timetableId,slotId,model):
+        self.model = model
+        self.capture = cv2.VideoCapture('ActivityRecognition/WhatsApp Video 2023-04-13 at 2.33.07 PM.mp4')
         self.s = s
         self.e = e
         self.f= f
@@ -49,17 +51,20 @@ class RTSPVideoWriterObject(object):
         self.readImageCount=0
         self.status=False
         self.ip=ip
+        self.activityLabel=[]
         
     def update(self):
         lsttimein=[]
         lsttimeout=[]
+        lstActivityLabel=[]
+        lstActivityTime=[]
         user_object =  apiuser.UserApi(user=muser)
-        user=  user_object.single_user_details(teacherName=self.teacherName)
+        user=  user_object.single_user_details(teacherName=self.teacherName,role='Teacher')
         userdata = user['data']
         image =  face_recognition.load_image_file(f'UserImages/Teacher/{userdata.image}')
         self.image_encodings = face_recognition.face_encodings(image)[0]
         while True:
-            self.capture = cv2.VideoCapture(self.ip)
+            #self.capture = cv2.VideoCapture(self.ip)
             if self.capture.isOpened():
                 if datetime.now().time()>self.st.time() and datetime.now().time()<self.et.time():
                     (self.status, self.frame) = self.capture.read()     
@@ -69,11 +74,32 @@ class RTSPVideoWriterObject(object):
                     self.thread1.start()
                     self.sc+=1
                 if self.status and datetime.now().time()>self.st.time() and datetime.now().time()<self.et.time():
+                    if self.tempFrameCount>10:
+                        if self._key_lock.locked():
+                            pass
+                        else:
+                            self.tempFrameCount=0
+                            self.thread2 = threading.Thread(target=self.check_time_using_facial_recognition, args=())
+                            self.thread2.daemon = True
+                            self.thread2.start()
+                        #self.check_time_using_facial_recognition(tempFrame=tempFrame)
+                    else:
+                        self.tempFrameCount+=1
                     if self.totalteachertimeframes>2:
-                        if self.teachertimeinframes>self.teachertimeoutframes and self.teacherin==False:
-                            lsttimein.append(datetime.now())
-                            self.teacherin=True
-                            self.teacherout==False
+                        if self.teachertimeinframes>self.teachertimeoutframes:
+                            if self.teacherin==False:
+                                self.teacherin=True
+                                self.teacherout==False
+                                lsttimein.append(datetime.now())
+                            counted = Counter(self.activityLabel)
+                            most_common = counted.most_common(1)
+                            if lstActivityLabel==[]:
+                                lstActivityLabel.append(most_common[0][0])
+                                lstActivityTime.append(datetime.now())
+                            elif most_common[0][0]!=lstActivityLabel[-1]:
+                                lstActivityLabel.append(most_common[0][0])
+                                lstActivityTime.append(datetime.now())
+                            
                             
                         elif self.teachertimeinframes<self.teachertimeoutframes and self.teacherout==False :
                             lsttimeout.append(datetime.now())
@@ -82,25 +108,21 @@ class RTSPVideoWriterObject(object):
                         self.totalteachertimeframes=0
                         self.teachertimeinframes=0
                         self.teachertimeoutframes=0
-                    if self.tempFrameCount>2:
-                        # if self._key_lock.locked():
-                        #     print("locked")
-                        #     pass
-                        # else:
-                        self.thread2 = threading.Thread(target=self.check_time_using_facial_recognition, args=())
-                        self.thread2.daemon = True
-                        self.thread2.start()
-                        #self.check_time_using_facial_recognition(tempFrame=tempFrame)
-                    else:
-                        self.tempFrameCount+=1
+                        print(len(self.activityLabel))
+                        print(self.activityLabel)
+                        self.activityLabel=[]
+                    
+                    
                         
                         
                     
                 if self.sc==1 and datetime.now().time()>self.et.time():
+                
                     if self.teacherin==True :
                         lsttimeout.append(datetime.now())
                         self.teacherout==True
                         self.teacherin= False
+                    self.activityLabel=[]
                     self.totalteachertimeframes=0
                     self.teachertimeinframes=0
                     self.teachertimeoutframes=0
@@ -132,32 +154,36 @@ class RTSPVideoWriterObject(object):
                     ctime = mchecktime.CheckTime(id=0,teacherSlotID=self.slotId,totaltimein=totaltimein,totaltimeout=totaltimeout)
                     checktime_object.add_checktime(checktime=ctime)
                     checktime =checktime_object.checksingletime_details(teacherSlotID=self.slotId)
-                    checktimedata = checktime['data']
+                    checktimedata = checktime
                     teacherslot_object = apiteacherslots.TeacherSlots(teacherslots=mteacherslots)
                     if totaltimein==0:
                         teacherSlot = mteacherslots.TeacherSlot
-                        teacherSlot.id=0
+                        teacherSlot.id=self.slotId
                         teacherSlot.timetableId=self.timetableId
                         teacherSlot.status="Not Held"
-                        teacherSlot.slot = self.slotId
+                        teacherSlot.slot = 0
                         teacherslot_object.update_teacherslots_details(teacherslots=teacherSlot)
                     else:
                         if totaltimeout>=1:
                             teacherSlot = mteacherslots.TeacherSlot
-                            teacherSlot.id=0
+                            teacherSlot.id=self.slotId
                             teacherSlot.timetableId=self.timetableId
                             teacherSlot.status="Late + Held"
-                            teacherSlot.slot = self.slotId
+                            teacherSlot.slot = 0
                             teacherslot_object.update_teacherslots_details(teacherslots=teacherSlot)
                         else:
                             teacherSlot = mteacherslots.TeacherSlot
-                            teacherSlot.id=0
+                            teacherSlot.id=self.slotId
                             teacherSlot.timetableId=self.timetableId
                             teacherSlot.status="Held"
-                            teacherSlot.slot = self.slotId
+                            teacherSlot.slot = 0
                         
                             teacherslot_object.update_teacherslots_details(teacherslots=teacherSlot)
                     for (timein,timeout) in zip(lsttimein,lsttimeout):
+                        activityCount=0
+                        for tempActivityTime in lstActivityTime:
+                            print(tempActivityTime)
+                                    
                         checktimedetails_object =  apichecktimedetails.CheckTimeDetailsApi(checktimedetails=mchecktimedetails)
                         ctimedetails = mchecktimedetails.CheckTimeDetails(id=0,checkTimeID=checktimedata.id,timein=timein,timeout=timeout)
                         datetime.now()
@@ -275,33 +301,56 @@ class RTSPVideoWriterObject(object):
         #     print("done")
         #     break
     def check_time_using_facial_recognition(self):
-        self._key_lock.acquire()
-        self.tempFrameCount=0
-        temp_image_path = f'temp{self.timetableId}.JPG'
-        cv2.imwrite(temp_image_path,self.frame)
-        test_image =  face_recognition.load_image_file(temp_image_path)
-        face_locations = face_recognition.face_locations(test_image)
-        face_encodings = face_recognition.face_encodings(test_image,face_locations)
-        count=-1
-        
-        for face_encoding in face_encodings:
-            matches = face_recognition.compare_faces(np.expand_dims(self.image_encodings,axis=0),face_encoding)
-            if True in matches:
-                self.teachertimeinframes+=1
-            else:
+        if self._key_lock.locked():
+            pass
+        else:
+            self._key_lock.acquire()
+            temp_image_path = f'temp{self.timetableId}.JPG'
+            cv2.imwrite(temp_image_path,self.frame)
+            image = cv2.imread(temp_image_path)
+            test_image =  face_recognition.load_image_file(temp_image_path)
+            face_encodings = face_recognition.face_encodings(test_image)
+            count=-1
+            print(f'Face found={len(face_encodings)}')
+            for face_encoding in face_encodings:
+                print(np.linalg.norm(np.expand_dims(self.image_encodings,axis=0) - face_encoding, axis=1))
+                matches = face_recognition.compare_faces(np.expand_dims(self.image_encodings,axis=0),face_encoding,tolerance=0.55)
+                if True in matches:
+                    label = self.checkActivity(image)
+                    self.activityLabel.append(label)
+                    self.teachertimeinframes+=1
+                else:
+                    self.teachertimeoutframes+=1
+                count=0
+            if count==-1:
                 self.teachertimeoutframes+=1
-            count=0
-        if count==-1:
-            self.teachertimeoutframes+=1
-            
-        self.totalteachertimeframes+=1
-        self._key_lock.release()
-        print(f'''
-            Total Frames={self.totalteachertimeframes}
-            Time In Frames={self.teachertimeinframes}
-            Time Out Frames={self.teachertimeoutframes}
-            ''')
-    
+                
+            self.totalteachertimeframes+=1
+            tempLabel=''
+            if self.teachertimeinframes>0:
+                tempLabel=self.activityLabel[self.teachertimeinframes-1]
+            print(f'''
+                Total Frames={self.totalteachertimeframes}
+                Time In Frames={self.teachertimeinframes} Label = {tempLabel}
+                Time Out Frames={self.teachertimeoutframes}
+                ''')
+            self._key_lock.release()
+       
+        
+        
+    def checkActivity(self,image):
+        results = self.model.predict(image,stream=True, imgsz=640)
+        label = self.get_label(results)
+        return label
+        
+        
+    def get_label(self,results):
+        class_names=['Mobile','Sit','Stand']
+        for r in results:
+            label=''
+            for c in r[0].boxes.cls:
+                label = f'{class_names[int(c)]} '
+                return label
     
        
 

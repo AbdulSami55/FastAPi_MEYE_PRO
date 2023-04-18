@@ -20,18 +20,19 @@ class UserApi:
                     ''')
         lst=[]
         for row in cursor.fetchall():
-            lst.append(self.user.User(id=row.ID,userID=row.UserID,
+            if row.Role!='Student':
+                lst.append(self.user.User(id=row.ID,userID=row.UserID,
                                  name=row.Name,password=row.Password,
                                  image=row.Image,role="Teacher"))
     
         return lst
     
-    def single_user_details(self,teacherName):
+    def single_user_details(self,teacherName,role):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM MEYE_USER WHERE Name='{teacherName}'
+                SELECT * FROM MEYE_USER WHERE Name='{teacherName}' and  Role='{role}'
                     ''')
         user=None
         for row in cursor.fetchall():
