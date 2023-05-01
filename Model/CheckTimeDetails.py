@@ -1,4 +1,5 @@
 
+from typing import List
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -12,7 +13,15 @@ class CheckTimeDetails(BaseModel):
     mobile:int
     
 
+class TeacherCHRActivityDetails(BaseModel):
+    timein:datetime
+    timeout:datetime
+    sit:int
+    stand:int
+    mobile:int
+    
 class TeacherCHRDetails(BaseModel):
+    id:int
     courseName:str
     day:str
     discipline:str
@@ -20,9 +29,6 @@ class TeacherCHRDetails(BaseModel):
     endTime:str
     totalTimeIn:str
     totalTimeOut:str
-    timein:datetime
-    timeout:datetime
-    sit:int
-    stand:int
-    mobile:int
     status:str
+    date:str
+    teacherCHRActivityDetails:List[TeacherCHRActivityDetails]

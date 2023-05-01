@@ -1,7 +1,7 @@
     
 from datetime import datetime
 from sql import MySQL
-
+import Model.CheckTimeDetails as mCheckTimeDetails
 
 class CheckTimeDetailsApi:
     def __init__(self,checktimedetails) -> None:
@@ -12,7 +12,7 @@ class CheckTimeDetailsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT  t.CourseName,t.Day,t.Discipline,t.StartTime,t.EndTime,
+                SELECT ct.ID, t.CourseName,t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
                 CHECKTIME ct Inner Join CHECKTIMEDETAILS ctd on 
@@ -22,22 +22,33 @@ class CheckTimeDetailsApi:
                 Where t.TeacherName='{teacherName}'
                     ''')
         lst=[]
+        
         for row in cursor.fetchall():
-            lst.append(self.checktimedetails.TeacherCHRDetails(
-                courseName=row.CourseName,
-                day=row.Day,
-                discipline=row.Discipline,
-                startTime=row.StartTime,
-                endTime=row.EndTime,
-                totalTimeIn=row.TotalTimeIn,
-                totalTimeOut=row.TotalTimeOut,
-                timein=row.TimeIn,
+            temp  = mCheckTimeDetails.TeacherCHRActivityDetails(timein=row.TimeIn,
                 timeout=row.TimeOut,
                 sit=row.Sit,
                 stand=row.Stand,
-                mobile=row.Mobile,
-                status=row.Status
-            ))
+                mobile=row.Mobile)
+            date=str(row.TimeIn).split(' ')[0]
+            index=-1
+            for i in lst:
+                if i.id==row.ID:
+                    index=0
+                    i.teacherCHRActivityDetails.append(temp)
+            if index==-1:
+                lst.append(self.checktimedetails.TeacherCHRDetails(
+                    id=row.ID,
+                    courseName=row.CourseName,
+                    day=row.Day,
+                    discipline=row.Discipline,
+                    startTime=row.StartTime,
+                    endTime=row.EndTime,
+                    totalTimeIn=row.TotalTimeIn,
+                    totalTimeOut=row.TotalTimeOut,
+                    status=row.Status,
+                    date=date,
+                    teacherCHRActivityDetails=[temp]
+                ))
         
         return lst
     def update_checktimedetails_details(self,checktimedetails):
@@ -74,7 +85,7 @@ class CheckTimeDetailsApi:
         cursor.execute(f'''
                 INSERT INTO CHECKTIMEDETAILS
                 VALUES
-                ('{checktimedetails.checkTimeID}','{t}','{t1}')
+                ('{checktimedetails.checkTimeID}','{t}','{t1}','{checktimedetails.sit}','{checktimedetails.stand}','{checktimedetails.mobile}')
                 ''')
 
         return {"data":"okay"}

@@ -85,63 +85,21 @@ class RescheduleApi:
              return {"data":"Time Miss Match"}
 
 
-    def gettimetablebydates(self,startdate,enddate,lstday):
-        try:
-            sql = MySQL()
-            sql.__enter__()
-            cursor = sql.conn.cursor()
-            cursor.execute(f'''
-                    SELECT * FROM TIMETABLE 
-                        ''')
-            lsttimetable = []
-            for row in cursor.fetchall():
-                st = row.START_TIME.split(':')
-                et = row.END_TIME.split(':')
-                st = f'{st[0]}:{st[1]}'
-                et = f'{et[0]}:{et[1]}'
-                if row.DAY in lstday:
-                    lsttimetable.append(mtimetable.TimeTable(id=row.ID,sectionID=row.SectionID
-                                                        ,starttime=st,
-                                                        endtime=et,
-                                                        day=row.DAY,courseCode=row.CourseID,
-                                                        venueID=row.VenueID))
-            cursor.execute(f'''
-                    SELECT * FROM RESCHEDULE WHERE DATE >= '{startdate}' AND DATE <= '{enddate}' AND STATUS =0
-                        ''')
-            for row in cursor.fetchall():
-                st = row.START_TIME.split(':')
-                et = row.END_TIME.split(':')
-                st = f'{st[0]}:{st[1]}'
-                et = f'{et[0]}:{et[1]}'
-                secid = 0
-                courseCode = 0
-                sql1 = MySQL()
-                sql1.__enter__()
-                cursor1 = sql1.conn.cursor()
-                cursor1.execute(f'''
-                   SELECT * FROM TEACHERSLOTS WHERE ID = '{row.TeacherSlotID}'
-                        ''')
-                for data in cursor1.fetchall():
-                    cursor1.execute(f'''
-                    SELECT * FROM TEACH WHERE ID = '{data.TeachID}'
-                            ''')
-                    for teachdata in cursor1.fetchall():
-                        cursor1.execute(f'''
-                        SELECT * FROM TIMETABLE WHERE ID = '{teachdata.TimeTableID}'
-                                ''')
-                        for timetabledata in cursor1.fetchall():
-                            secid=timetabledata.SectionID
-                            courseCode = timetabledata.CourseID
-                lsttimetable.append(self.timetable.TimeTable(id=-1,sectionID=secid
-                                                    ,starttime=st,
-                                                    endtime=et,
-                                                    day=row.DAY,
-                                                    courseCode=courseCode,
-                                                    venueID=row.VenueID))
-            return lsttimetable
-        except ZeroDivisionError:
-            print(ZeroDivisionError)
-            return [] 
-    
-                    
-            
+    def checkTeacherRescheduleClass(self,teacherName):
+       sql = MySQL()
+       sql.__enter__()
+       cursor = sql.conn.cursor()
+       cursor.execute(f'''
+                    SELECT ts.ID,r.Status  FROM  TEACHERSLOTS ts left Join RESCHEDULE r
+                    on r.TeacherSlotId=ts.ID Inner Join TIMETABLE t 
+                    on t.ID=ts.TimeTableId Where t.TeacherName='{teacherName}' 
+                    And ts.Status='Not Held'
+                    ''')
+       id=-1
+       for row in cursor.fetchall():
+           if row.Status!=0:
+               id=row.ID
+               break
+       if id==-1:
+            return "No Class Missed"
+       return id

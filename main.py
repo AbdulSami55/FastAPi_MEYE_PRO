@@ -50,7 +50,7 @@ from ultralytics import YOLO
 
 # nest_asyncio.apply()
 
-networkip = '192.168.43.192'
+networkip = '192.168.0.112'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -226,10 +226,10 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
     img = cv2.imread('temp895 - Copy.JPG')
     model.predict(img,stream=True, imgsz=640)
     st = datetime.now()
-    et = st + timedelta(minutes=2)
+    et = st + timedelta(minutes=4)
     stime= st
     etime =  et
-    s=0
+    s=1
     e=0
     f=0
     print(ip, s, e, f,stime,etime,day,teacherName)
@@ -240,6 +240,13 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
             video_stream_widget.show_frame()
         except AttributeError:
             pass
+
+
+@app.get("/videoss")
+async def get_video():
+    video_path = f"Recordings/file,112,start_recording.mp4"
+    return FileResponse(video_path, media_type="video/mp4")
+
 
         
 @app.get('/stream')
@@ -399,6 +406,9 @@ def addtimetable(file: UploadFile = File(...)):
 def timetabledetails():
     return timetable_object.timetable_details()
 
+@app.get('/api/timetable-details-by-date') 
+def timetabledetailsbydate(startdate:str,enddate:str):
+    return timetable_object.timetable_details_by_date(startDate=startdate,endDate=enddate)
 
 @app.get('/api/teacher-timetable-details/{teacherName}') 
 def timetabledetails(teacherName : str):
@@ -508,6 +518,10 @@ def rescheduledetails():
 @app.get('/api/get-timetable') 
 def gettimetable():
     return reschedule_object.getTimetable()
+
+@app.get('/api/check-teacher-reschedule')
+def checkTeacherRescheduleClass(teacherName:str):
+    return reschedule_object.checkTeacherRescheduleClass(teacherName=teacherName)
 
 class lststr(BaseModel):
     lstday : List[str]

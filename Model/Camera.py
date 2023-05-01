@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -6,4 +7,4 @@ class Camera(BaseModel):
     dvrID:int
     venueID:int
     portNumber:str
-    venueName:str
+    venueName:Optional[str]=None

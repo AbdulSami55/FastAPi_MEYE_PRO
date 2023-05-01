@@ -22,7 +22,7 @@ from collections import Counter
 class RTSPVideoWriterObject(object):
     def __init__(self,ip, s, e, f,stime,etime,day,teacherName,timetableId,slotId,model):
         self.model = model
-        self.capture = cv2.VideoCapture('ActivityRecognition/WhatsApp Video 2023-04-13 at 2.33.07 PM.mp4')
+        self.capture = cv2.VideoCapture(ip)
         self.s = s
         self.e = e
         self.f= f
@@ -45,7 +45,6 @@ class RTSPVideoWriterObject(object):
         self.sc=0
         self.image_encodings=None
         self.teacherin = False
-        self.teacherout = False
         self.tempFrameCount=0
         self.tempFrame=None
         self.readImageCount=0
@@ -89,7 +88,6 @@ class RTSPVideoWriterObject(object):
                         if self.teachertimeinframes>self.teachertimeoutframes:
                             if self.teacherin==False:
                                 self.teacherin=True
-                                self.teacherout==False
                                 lsttimein.append(datetime.now())
                             counted = Counter(self.activityLabel)
                             most_common = counted.most_common(1)
@@ -101,9 +99,8 @@ class RTSPVideoWriterObject(object):
                                 lstActivityTime.append(datetime.now())
                             
                             
-                        elif self.teachertimeinframes<self.teachertimeoutframes and self.teacherout==False :
+                        elif self.teachertimeinframes<self.teachertimeoutframes and self.teacherin==True:
                             lsttimeout.append(datetime.now())
-                            self.teacherout==True
                             self.teacherin= False
                         self.totalteachertimeframes=0
                         self.teachertimeinframes=0
@@ -120,7 +117,6 @@ class RTSPVideoWriterObject(object):
                 
                     if self.teacherin==True :
                         lsttimeout.append(datetime.now())
-                        self.teacherout==True
                         self.teacherin= False
                     self.activityLabel=[]
                     self.totalteachertimeframes=0
@@ -180,12 +176,12 @@ class RTSPVideoWriterObject(object):
                         
                             teacherslot_object.update_teacherslots_details(teacherslots=teacherSlot)
                     for (timein,timeout) in zip(lsttimein,lsttimeout):
-                        activityCount=0
-                        for tempActivityTime in lstActivityTime:
-                            print(tempActivityTime)
+                        # activityCount=0
+                        # for tempActivityTime in lstActivityTime:
+                        #     print(tempActivityTime)
                                     
                         checktimedetails_object =  apichecktimedetails.CheckTimeDetailsApi(checktimedetails=mchecktimedetails)
-                        ctimedetails = mchecktimedetails.CheckTimeDetails(id=0,checkTimeID=checktimedata.id,timein=timein,timeout=timeout)
+                        ctimedetails = mchecktimedetails.CheckTimeDetails(id=0,checkTimeID=checktimedata.id,timein=timein,timeout=timeout,sit=0,stand=0,mobile=0)
                         datetime.now()
                         checktimedetails_object.add_checktimedetails(checktimedetails=ctimedetails)   
                     self.sc=0
@@ -313,10 +309,11 @@ class RTSPVideoWriterObject(object):
             count=-1
             print(f'Face found={len(face_encodings)}')
             for face_encoding in face_encodings:
-                print(np.linalg.norm(np.expand_dims(self.image_encodings,axis=0) - face_encoding, axis=1))
-                matches = face_recognition.compare_faces(np.expand_dims(self.image_encodings,axis=0),face_encoding,tolerance=0.55)
+                #print(np.linalg.norm(np.expand_dims(self.image_encodings,axis=0) - face_encoding, axis=1))
+                matches = face_recognition.compare_faces(np.expand_dims(self.image_encodings,axis=0),face_encoding)
                 if True in matches:
                     label = self.checkActivity(image)
+                    # label='Sit'
                     self.activityLabel.append(label)
                     self.teachertimeinframes+=1
                 else:
