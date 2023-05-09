@@ -82,6 +82,7 @@ file_path = "Recordings/file,63,complete_recording.mp4"
 CHUNK_SIZE = 1024*1024
 
 FCM_ENDPOINT = "https://fcm.googleapis.com/fcm/send"
+
 FCM_SERVER_KEY =fcmKey.key
 
 @app.post("/send-notification/{device_token}")
@@ -135,6 +136,7 @@ async def video_endpoint(range: str = Header(None),path:str=None):
         ),
         }
         return Response(data, status_code=206, headers=headers, media_type="video/mp4")
+    
 #---------------------------Camera-----------------------------------------
 
     
@@ -242,7 +244,7 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
             pass
 
 
-@app.get("/videoss")
+@app.get("/videos")
 async def get_video():
     video_path = f"Recordings/file,112,start_recording.mp4"
     return FileResponse(video_path, media_type="video/mp4")
