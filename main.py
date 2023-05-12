@@ -580,6 +580,10 @@ async def addAttendance(attendance:List[mAttendance.Attendance]):
 @app.get('/api/get-teacher-chr')
 def getTeacherCHR(teacherName:str):
     return checkTimeDetails_object.getTeacherCHR(teacherName=teacherName)
+
+@app.get('/api/get-all-teacher-chr')
+def getAllTeacherCHR():
+    return checkTimeDetails_object.getAllTeacherCHR()
         
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
