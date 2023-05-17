@@ -12,14 +12,16 @@ class CheckTimeDetailsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT ct.ID, t.CourseName,t.Day,t.Discipline,t.StartTime,t.EndTime,
+                SELECT t.TeacherName,mu.Image ,ct.ID, t.CourseName,
+                t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
-                CHECKTIME ct Inner Join CHECKTIMEDETAILS ctd on 
+                CHECKTIME ct left Join CHECKTIMEDETAILS ctd on 
                 ct.ID=ctd.CheckTimeId Inner Join 
                 TEACHERSLOTS ts on ts.ID=ct.TeacherSlotId 
-                Inner Join TIMETABLE t on ts.TimeTableId=t.ID
-                Where t.TeacherName='{teacherName}'
+                Inner Join TIMETABLE t on ts.TimeTableId=t.ID 
+                Inner Join MEYE_USER mu on mu.Name=t.TeacherName
+                Where mu.Role='Teacher' And t.TeacherName='{teacherName}'
                     ''')
         lst=[]
         
@@ -47,6 +49,8 @@ class CheckTimeDetailsApi:
                     totalTimeOut=row.TotalTimeOut,
                     status=row.Status,
                     date=date,
+                    teacherName=row.TeacherName,
+                    image=row.Image,
                     teacherCHRActivityDetails=[temp]
                 ))
         
@@ -57,13 +61,16 @@ class CheckTimeDetailsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT ct.ID, t.CourseName,t.Day,t.Discipline,t.StartTime,t.EndTime,
+                SELECT t.TeacherName,mu.Image ,ct.ID, t.CourseName,
+                t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
-                CHECKTIME ct Inner Join CHECKTIMEDETAILS ctd on 
+                CHECKTIME ct left Join CHECKTIMEDETAILS ctd on 
                 ct.ID=ctd.CheckTimeId Inner Join 
                 TEACHERSLOTS ts on ts.ID=ct.TeacherSlotId 
-                Inner Join TIMETABLE t on ts.TimeTableId=t.ID
+                Inner Join TIMETABLE t on ts.TimeTableId=t.ID 
+                Inner Join MEYE_USER mu on mu.Name=t.TeacherName
+                Where mu.Role='Teacher'
                     ''')
         lst=[]  
         for row in cursor.fetchall():
@@ -90,6 +97,8 @@ class CheckTimeDetailsApi:
                     totalTimeOut=row.TotalTimeOut,
                     status=row.Status,
                     date=date,
+                    teacherName=row.TeacherName,
+                    image=row.Image,
                     teacherCHRActivityDetails=[temp]
                 ))
         

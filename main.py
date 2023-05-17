@@ -50,7 +50,7 @@ from ultralytics import YOLO
 
 # nest_asyncio.apply()
 
-networkip = '192.168.0.112'
+networkip = '192.168.1.100'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -244,9 +244,9 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
             pass
 
 
-@app.get("/videos")
-async def get_video():
-    video_path = f"Recordings/file,112,start_recording.mp4"
+@app.get("/api/videos")
+async def get_video(id:str,type:str):
+    video_path = f"Recordings/file,{id},{type}"
     return FileResponse(video_path, media_type="video/mp4")
 
 
@@ -263,7 +263,7 @@ def start_stream():
                    C ON  C.VenueId = v.ID INNER JOIN DVR d ON d.ID=C.DvrID
                    ''')
     for timetable in cursor.fetchall():
-        t1 = threading.Thread(target=cam, args=(f'rtsp://{timetable.IP}:8080/h264_ulaw.sdp', timetable.StartRecord, timetable.EndRecord, timetable.FullRecord,timetable.StartTime,timetable.EndTime,timetable.Day,timetable.TeacherName,timetable.TimeTableId))
+        t1 = threading.Thread(target=cam, args=(f'rtsp://{timetable.HOST}:{timetable.PASSWORD}@{timetable.IP}/user={timetable.HOST}&password={timetable.PASSWORD}&channel={timetable.CHANNEL}&stream={timetable.PortNumber}.sdp', timetable.StartRecord, timetable.EndRecord, timetable.FullRecord,timetable.StartTime,timetable.EndTime,timetable.Day,timetable.TeacherName,timetable.TimeTableId))
         t1.start()
     
 
@@ -352,9 +352,15 @@ def addStudent(student: muser.Student=Depends(),file: UploadFile = File(...)):
         with open(path, 'wb') as f:
             f.write(contents)
         student.image = file.filename
-        test_image =  face_recognition.load_image_file(path)
-        face_locations = face_recognition.face_locations(test_image)
-        face_encodings = face_recognition.face_encodings(test_image,face_locations)
+        # test_image =  face_recognition.load_image_file(path)
+        # face_locations = face_recognition.face_locations(test_image)
+        img = cv2.imread(path)
+        height, width = img.shape[:2]
+        new_width = 640
+        new_height = int(new_width * height / width)
+        img = cv2.resize(img, (new_width, new_height))
+        image_encodings = face_recognition.face_encodings(img)
+        #face_encodings = face_recognition.face_encodings(test_image,face_locations)
         return student_object.addStudent(student=student)
     except Exception:
         os.remove(f'UserImages/Student/{student.image}')

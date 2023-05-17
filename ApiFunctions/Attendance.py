@@ -76,6 +76,7 @@ class AttendanceApi:
                        s.AridNo = e.StudentID WHERE t.TeacherName='Dr. Hassan' AND
                        t.Day='Friday' AND t.StartTime='10:00:00.000000'
                        ''')
+        
         for row in cursor.fetchall():
             lst.append(self.mark_and_save_attendance(face_encodings,row.Image,row.ID,row.Name))
             print(f'''
@@ -84,17 +85,23 @@ class AttendanceApi:
         return lst
     def mark_and_save_attendance(self,face_encodings,Image,ID,Name):
         try:
-            image =  face_recognition.load_image_file(f'UserImages/Student/{Image}')
-            image_encodings = face_recognition.face_encodings(image)[0]
-        except:
             image = cv2.imread(f'UserImages/Student/{Image}')
             image = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)
             image_encodings = face_recognition.face_encodings(image)[0]
+        except:
+            image =  face_recognition.load_image_file(f'UserImages/Student/{Image}')
+            image_encodings = face_recognition.face_encodings(image)[0]
+        # img = cv2.imread(f'UserImages/Student/{Image}')
+        # height, width = img.shape[:2]
+        # new_width = 640
+        # new_height = int(new_width * height / width)
+        # img = cv2.resize(img, (new_width, new_height))
+        # image_encodings = face_recognition.face_encodings(img)
         count=0
         for face_encoding in face_encodings:
             matches = face_recognition.compare_faces(np.expand_dims(image_encodings,axis=0),face_encoding,tolerance=0.55)
             if True in matches:
-                # print(np.linalg.norm(np.expand_dims(image_encodings,axis=0) - face_encoding, axis=1))
+                print(np.linalg.norm(np.expand_dims(image_encodings,axis=0) - face_encoding, axis=1))
                 count+=1
                 return mattendace.Attendance(id=0,enrollId=ID,date=str(datetime.now().date()),status=True,name=Name)
                 

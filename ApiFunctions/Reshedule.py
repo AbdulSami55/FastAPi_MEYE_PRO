@@ -76,9 +76,10 @@ class RescheduleApi:
             cursor.execute(f'''
                     INSERT INTO RESCHEDULE
                     VALUES
-                    ('{reschedule.teachID}','{reschedule.venueID}',
-                    '{reschedule.status}','{reschedule.starttime.value}'
-                    ,'{reschedule.endtime.value}','{reschedule.day.value}')
+                    ('{reschedule.teacherSlotId}','{reschedule.date}',
+                    '{reschedule.day.value}','{reschedule.starttime.value}'
+                    ,'{reschedule.endtime.value}','{reschedule.venueName}'
+                    ,'{reschedule.status}')
                     ''')
             return {"data":"okay"}
         else:

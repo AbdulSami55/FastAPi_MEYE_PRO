@@ -1,5 +1,5 @@
 
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -14,11 +14,11 @@ class CheckTimeDetails(BaseModel):
     
 
 class TeacherCHRActivityDetails(BaseModel):
-    timein:datetime
-    timeout:datetime
-    sit:int
-    stand:int
-    mobile:int
+    timein:Optional[datetime]
+    timeout:Optional[datetime]
+    sit:Optional[int]
+    stand:Optional[int]
+    mobile:Optional[int]
     
 class TeacherCHRDetails(BaseModel):
     id:int
@@ -31,4 +31,6 @@ class TeacherCHRDetails(BaseModel):
     totalTimeOut:str
     status:str
     date:str
+    teacherName:str
+    image:str
     teacherCHRActivityDetails:List[TeacherCHRActivityDetails]
