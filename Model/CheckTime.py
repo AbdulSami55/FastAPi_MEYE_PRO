@@ -5,4 +5,5 @@ class CheckTime(BaseModel):
     teacherSlotID:int
     totaltimein:int
     totaltimeout:int
+    date:str
     

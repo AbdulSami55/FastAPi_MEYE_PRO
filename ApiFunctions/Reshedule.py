@@ -1,6 +1,7 @@
 import Model.TimeTable as mtimetable
 from sql import MySQL
 import Model.TimeTable as mtimetable
+from pydantic import BaseModel
 
 class RescheduleApi:
     def __init__(self,reschedule) -> None:
@@ -87,20 +88,30 @@ class RescheduleApi:
 
 
     def checkTeacherRescheduleClass(self,teacherName):
+        
+       class Data(BaseModel):
+           id:int
+           discipline:str
+           
        sql = MySQL()
        sql.__enter__()
        cursor = sql.conn.cursor()
        cursor.execute(f'''
-                    SELECT ts.ID,r.Status  FROM  TEACHERSLOTS ts left Join RESCHEDULE r
+                    SELECT ts.ID,r.Status,t.Discipline  FROM  TEACHERSLOTS ts left Join RESCHEDULE r
                     on r.TeacherSlotId=ts.ID Inner Join TIMETABLE t 
                     on t.ID=ts.TimeTableId Where t.TeacherName='{teacherName}' 
                     And ts.Status='Not Held'
                     ''')
-       id=-1
+       lst=[]
        for row in cursor.fetchall():
            if row.Status!=0:
-               id=row.ID
-               break
-       if id==-1:
+               count=0
+               for i in lst:
+                   if row.Discipline==i.discipline:
+                       count+=1
+               if count==0:
+                    lst.append(Data(id=row.ID,discipline=row.Discipline))
+               
+       if lst==[]:
             return "No Class Missed"
-       return id
+       return lst

@@ -33,9 +33,9 @@ class RTSPVideoWriterObject(object):
         self.timetableId = timetableId
         self.slotId = slotId
         self._key_lock = threading.Lock() 
-        self.codec = cv2.VideoWriter_fourcc(*'mp4v')
-        self.frame_width = int(self.capture.get(3))
-        self.frame_height = int(self.capture.get(4))
+        self.codec = cv2.VideoWriter_fourcc(*'h264')
+        self.frame_width = 300
+        self.frame_height = 150
         self.teachertimeinframes=0
         self.teachertimeoutframes=0
         self.totalteachertimeframes=0
@@ -66,7 +66,7 @@ class RTSPVideoWriterObject(object):
             #self.capture = cv2.VideoCapture(self.ip)
             if self.capture.isOpened():
                 if datetime.now().time()>self.st.time() and datetime.now().time()<self.et.time():
-                    (self.status, self.frame) = self.capture.read()     
+                    (self.status, self.frame) = self.capture.read()  
                 if self.status and self.sc==0 and datetime.now().time()>self.st.time() and datetime.now().time()<self.et.time():
                     self.thread1 = threading.Thread(target=self.check_time, args=())
                     self.thread1.daemon = True
@@ -85,7 +85,7 @@ class RTSPVideoWriterObject(object):
                     else:
                         self.tempFrameCount+=1
                     if self.totalteachertimeframes>2:
-                        if self.teachertimeinframes>self.teachertimeoutframes:
+                        if self.teachertimeinframes>0:
                             if self.teacherin==False:
                                 self.teacherin=True
                                 lsttimein.append(datetime.now())
@@ -99,7 +99,7 @@ class RTSPVideoWriterObject(object):
                                 lstActivityTime.append(datetime.now())
                             
                             
-                        elif self.teachertimeinframes<self.teachertimeoutframes and self.teacherin==True:
+                        elif self.teachertimeinframes==0 and self.teacherin==True:
                             lsttimeout.append(datetime.now())
                             self.teacherin= False
                         self.totalteachertimeframes=0
@@ -147,7 +147,7 @@ class RTSPVideoWriterObject(object):
                         totaltimein = int(totalsec/60)
                     totaltimeout = overalltimemin-totaltimein
                     checktime_object =  apichecktime.CheckTimeApi(checktime=mchecktime)
-                    ctime = mchecktime.CheckTime(id=0,teacherSlotID=self.slotId,totaltimein=totaltimein,totaltimeout=totaltimeout)
+                    ctime = mchecktime.CheckTime(id=0,teacherSlotID=self.slotId,totaltimein=totaltimein,totaltimeout=totaltimeout,date=str(datetime.now().date()))
                     checktime_object.add_checktime(checktime=ctime)
                     checktime =checktime_object.checksingletime_details(teacherSlotID=self.slotId)
                     checktimedata = checktime
@@ -224,9 +224,11 @@ class RTSPVideoWriterObject(object):
         rt = self.st + timedelta(seconds=60)
         print("start",self.st.time())
         print('record',rt.time())
-        start_video = cv2.VideoWriter(fname, self.codec, 30, (self.frame_width, self.frame_height))
+        start_video = cv2.VideoWriter(fname, self.codec, 20, (self.frame_width, self.frame_height))
+        
         while True:
-            start_video.write(self.frame)
+            frame = cv2.resize(self.frame, (self.frame_width, self.frame_height))
+            start_video.write(frame)
             if datetime.now().time() > rt.time():
                 # conn = MySQL()
                 # conn.__enter__()
@@ -253,12 +255,13 @@ class RTSPVideoWriterObject(object):
         rt = self.et - timedelta(seconds=60)
         print("end", self.et.time())
         print('record', rt.time())
-        end_video = cv2.VideoWriter(fename, self.codec, 30, (self.frame_width, self.frame_height))
+        end_video = cv2.VideoWriter(fename, self.codec, 20, (self.frame_width, self.frame_height))
         while True:
             ct = datetime.now().time()
             while ct > rt.time() and ct<self.et.time():
                 ct = datetime.now().time()
-                end_video.write(self.frame)
+                frame = cv2.resize(self.frame, (self.frame_width, self.frame_height))
+                end_video.write(frame)
                 count = 0
             if count == 0:
                 end_video.release()
@@ -270,9 +273,10 @@ class RTSPVideoWriterObject(object):
 
     def complete_recording(self):
         fcname = f'Recordings/file,{self.slotId},complete_recording.mp4'
-        complete_video = cv2.VideoWriter(fcname, self.codec, 30, (self.frame_width, self.frame_height))
+        complete_video = cv2.VideoWriter(fcname, self.codec, 20, (self.frame_width, self.frame_height))
         while True:
-            complete_video.write(self.frame)
+            frame = cv2.resize(self.frame, (self.frame_width, self.frame_height))
+            complete_video.write(frame)
             if datetime.now().time() > self.et.time():
                 complete_video.release()
                 print("done complete")
@@ -304,7 +308,12 @@ class RTSPVideoWriterObject(object):
             temp_image_path = f'temp{self.timetableId}.JPG'
             cv2.imwrite(temp_image_path,self.frame)
             image = cv2.imread(temp_image_path)
-            test_image =  face_recognition.load_image_file(temp_image_path)
+            try:
+                test_image = cv2.imread(temp_image_path)
+                test_image = cv2.resize(test_image, (0, 0), fx=0.5, fy=0.5)
+            except:
+                test_image =  face_recognition.load_image_file(temp_image_path)
+            #test_image =  face_recognition.load_image_file(temp_image_path)
             face_encodings = face_recognition.face_encodings(test_image)
             count=-1
             print(f'Face found={len(face_encodings)}')
@@ -312,8 +321,8 @@ class RTSPVideoWriterObject(object):
                 #print(np.linalg.norm(np.expand_dims(self.image_encodings,axis=0) - face_encoding, axis=1))
                 matches = face_recognition.compare_faces(np.expand_dims(self.image_encodings,axis=0),face_encoding)
                 if True in matches:
-                    label = self.checkActivity(image)
-                    # label='Sit'
+                    #label = self.checkActivity(image)
+                    label='Sit'
                     self.activityLabel.append(label)
                     self.teachertimeinframes+=1
                 else:

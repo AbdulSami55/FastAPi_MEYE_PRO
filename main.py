@@ -36,6 +36,8 @@ import ApiFunctions.TeacherSlots as apiteacherslots
 import ApiFunctions.Student as apiStudent
 import ApiFunctions.Attendance as apiAttendance
 import Model.Attendance as mAttendance
+import ApiFunctions.Rules as apiRules
+import Model.Rules as mRules
 import ApiFunctions.CheckTimeDetails as apiCheckTimeDetails
 import Model.CheckTimeDetails as mCheckTimeDetails
 # import nest_asyncio
@@ -50,7 +52,7 @@ from ultralytics import YOLO
 
 # nest_asyncio.apply()
 
-networkip = '192.168.1.100'
+networkip = '192.168.43.192'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -70,6 +72,7 @@ app.add_middleware(
 # async def read_item(request: Request):
 #     return templates.TemplateResponse("indexweb.html", {"request": request})
 
+#rtsp://{timetable.HOST}:{timetable.PASSWORD}@{timetable.IP}/user={timetable.HOST}&password={timetable.PASSWORD}&channel={timetable.CHANNEL}&stream={timetable.PortNumber}.sdp', timetable.StartRecord, timetable.EndRecord, timetable.FullRecord,timetable.StartTime,timetable.EndTime,timetable.Day,timetable.TeacherName,timetable.TimeTableId
 
 # CHUNK_SIZE = 1024*1024
 file_path = "Recordings/file,63,complete_recording.mp4"
@@ -263,7 +266,7 @@ def start_stream():
                    C ON  C.VenueId = v.ID INNER JOIN DVR d ON d.ID=C.DvrID
                    ''')
     for timetable in cursor.fetchall():
-        t1 = threading.Thread(target=cam, args=(f'rtsp://{timetable.HOST}:{timetable.PASSWORD}@{timetable.IP}/user={timetable.HOST}&password={timetable.PASSWORD}&channel={timetable.CHANNEL}&stream={timetable.PortNumber}.sdp', timetable.StartRecord, timetable.EndRecord, timetable.FullRecord,timetable.StartTime,timetable.EndTime,timetable.Day,timetable.TeacherName,timetable.TimeTableId))
+        t1 = threading.Thread(target=cam, args=(f'rtsp://{timetable.IP}:8080/h264_ulaw.sdp', timetable.StartRecord, timetable.EndRecord, timetable.FullRecord,timetable.StartTime,timetable.EndTime,timetable.Day,timetable.TeacherName,timetable.TimeTableId))
         t1.start()
     
 
@@ -352,15 +355,9 @@ def addStudent(student: muser.Student=Depends(),file: UploadFile = File(...)):
         with open(path, 'wb') as f:
             f.write(contents)
         student.image = file.filename
-        # test_image =  face_recognition.load_image_file(path)
-        # face_locations = face_recognition.face_locations(test_image)
-        img = cv2.imread(path)
-        height, width = img.shape[:2]
-        new_width = 640
-        new_height = int(new_width * height / width)
-        img = cv2.resize(img, (new_width, new_height))
-        image_encodings = face_recognition.face_encodings(img)
-        #face_encodings = face_recognition.face_encodings(test_image,face_locations)
+        test_image =  face_recognition.load_image_file(path)
+        face_locations = face_recognition.face_locations(test_image)
+        face_encodings = face_recognition.face_encodings(test_image,face_locations)
         return student_object.addStudent(student=student)
     except Exception:
         os.remove(f'UserImages/Student/{student.image}')
@@ -590,6 +587,13 @@ def getTeacherCHR(teacherName:str):
 @app.get('/api/get-all-teacher-chr')
 def getAllTeacherCHR():
     return checkTimeDetails_object.getAllTeacherCHR()
+
+#------------------------------------------------------------Rules------------------------------------------------------
+
+@app.post('/api/add-rules/{teacherName}')
+def getAllTeacherCHR(rules:List[mRules.Rules],teacherName:str):
+    return rules_object.add_rules(rules=rules,teacherName=teacherName)
+
         
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
@@ -606,6 +610,7 @@ if __name__=='__main__':
     student_object = apiStudent.StudentApi(student=muser)
     attendance_object = apiAttendance.AttendanceApi(attendance=mAttendance)
     checkTimeDetails_object = apiCheckTimeDetails.CheckTimeDetailsApi(checktimedetails=mCheckTimeDetails)
+    rules_object = apiRules.RulesApi(rules=mRules)
     uvicorn.run(app, host=networkip,port=networkport)
     
     
