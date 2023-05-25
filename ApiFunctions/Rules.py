@@ -56,10 +56,10 @@ class RulesApi:
                         (SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
                         ''')
         lstTimeTable=[]
-        startRecord=0
-        midRecord=0
-        endRecord=0
-        fullRecord=0
+        startRecord=False
+        midRecord=False
+        endRecord=False
+        fullRecord=False
         for row in cursor.fetchall():  
             st = row.StartTime.split(':')
             et = row.EndTime.split(':')

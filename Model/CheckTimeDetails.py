@@ -33,4 +33,7 @@ class TeacherCHRDetails(BaseModel):
     date:str
     teacherName:str
     image:str
+    sit:str
+    stand:str
+    mobile:str
     teacherCHRActivityDetails:List[TeacherCHRActivityDetails]
