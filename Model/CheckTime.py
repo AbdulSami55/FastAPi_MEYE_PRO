@@ -6,4 +6,7 @@ class CheckTime(BaseModel):
     totaltimein:int
     totaltimeout:int
     date:str
+    sit:int
+    stand:int
+    mobile:int
     

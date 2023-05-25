@@ -12,7 +12,7 @@ class CheckTimeDetailsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT t.TeacherName,mu.Image ,ct.ID, t.CourseName,
+                SELECT ct.Date,t.TeacherName,mu.Image ,ct.ID, t.CourseName,
                 t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
@@ -31,7 +31,7 @@ class CheckTimeDetailsApi:
                 sit=row.Sit,
                 stand=row.Stand,
                 mobile=row.Mobile)
-            date=str(row.TimeIn).split(' ')[0]
+          
             index=-1
             for i in lst:
                 if i.id==row.ID:
@@ -48,7 +48,7 @@ class CheckTimeDetailsApi:
                     totalTimeIn=row.TotalTimeIn,
                     totalTimeOut=row.TotalTimeOut,
                     status=row.Status,
-                    date=date,
+                    date=row.Date,
                     teacherName=row.TeacherName,
                     image=row.Image,
                     teacherCHRActivityDetails=[temp]
@@ -61,7 +61,7 @@ class CheckTimeDetailsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT t.TeacherName,mu.Image ,ct.ID, t.CourseName,
+                SELECT ct.Date,t.TeacherName,mu.Image ,ct.ID, t.CourseName,
                 t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
@@ -79,7 +79,7 @@ class CheckTimeDetailsApi:
                 sit=row.Sit,
                 stand=row.Stand,
                 mobile=row.Mobile)
-            date=str(row.TimeIn).split(' ')[0]
+            
             index=-1
             for i in lst:
                 if i.id==row.ID:
@@ -96,7 +96,7 @@ class CheckTimeDetailsApi:
                     totalTimeIn=row.TotalTimeIn,
                     totalTimeOut=row.TotalTimeOut,
                     status=row.Status,
-                    date=date,
+                    date=row.Date,
                     teacherName=row.TeacherName,
                     image=row.Image,
                     teacherCHRActivityDetails=[temp]

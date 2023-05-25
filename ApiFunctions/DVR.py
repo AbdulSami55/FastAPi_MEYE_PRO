@@ -35,6 +35,13 @@ class DVRApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
+                   SELECT * FROM CAMERA WHERE DvrID = '{dvr.id}'
+                    ''')
+        for row in cursor.fetchall():
+            cursor.execute(f'''
+                   DELETE FROM CAMERA WHERE ID = '{row[0]}'
+                    ''')
+        cursor.execute(f'''
                    DELETE FROM DVR WHERE ID = '{dvr.id}'
                     ''')
 

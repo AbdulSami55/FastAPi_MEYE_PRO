@@ -235,7 +235,7 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
     stime= st
     etime =  et
     s=1
-    e=0
+    e=1
     f=0
     print(ip, s, e, f,stime,etime,day,teacherName)
     
@@ -251,6 +251,21 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
 async def get_video(id:str,type:str):
     video_path = f"Recordings/file,{id},{type}"
     return FileResponse(video_path, media_type="video/mp4")
+
+
+# @app.get("/")
+# def startServer():
+#     sql = MySQL()
+#     sql.__enter__()
+#     cursor = sql.conn.cursor()
+#     cursor.execute(f'''
+#                    Select * From TIMETABLE t left Join TEACHERSLOTS ts 
+#                    on ts.TimeTableId=t.ID
+#                    left Join RESCHEDULE r on ts.ID=r.TeacherSlotId
+#                    ''')
+#     for row in cursor.fetchall():
+#         if row[6]=='Monday':
+#             print(row)
 
 
         
@@ -594,6 +609,9 @@ def getAllTeacherCHR():
 def getAllTeacherCHR(rules:List[mRules.Rules],teacherName:str):
     return rules_object.add_rules(rules=rules,teacherName=teacherName)
 
+@app.get('/api/get-rules-timetable/{teacherName}')
+def getTeacherRulesTimeTable(teacherName:str):
+    return rules_object.getTeacherRulesTimeTable(teacherName=teacherName)
         
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)

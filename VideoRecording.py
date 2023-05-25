@@ -62,6 +62,7 @@ class RTSPVideoWriterObject(object):
         userdata = user['data']
         image =  face_recognition.load_image_file(f'UserImages/Teacher/{userdata.image}')
         self.image_encodings = face_recognition.face_encodings(image)[0]
+        self.temporaryTime=None
         while True:
             #self.capture = cv2.VideoCapture(self.ip)
             if self.capture.isOpened():
@@ -77,6 +78,7 @@ class RTSPVideoWriterObject(object):
                         if self._key_lock.locked():
                             pass
                         else:
+                            self.temporaryTime=datetime.now()
                             self.tempFrameCount=0
                             self.thread2 = threading.Thread(target=self.check_time_using_facial_recognition, args=())
                             self.thread2.daemon = True
@@ -84,23 +86,23 @@ class RTSPVideoWriterObject(object):
                         #self.check_time_using_facial_recognition(tempFrame=tempFrame)
                     else:
                         self.tempFrameCount+=1
-                    if self.totalteachertimeframes>2:
+                    if self.totalteachertimeframes>5:
                         if self.teachertimeinframes>0:
                             if self.teacherin==False:
                                 self.teacherin=True
-                                lsttimein.append(datetime.now())
+                                lsttimein.append(self.temporaryTime)
                             counted = Counter(self.activityLabel)
                             most_common = counted.most_common(1)
                             if lstActivityLabel==[]:
                                 lstActivityLabel.append(most_common[0][0])
-                                lstActivityTime.append(datetime.now())
+                                lstActivityTime.append(self.temporaryTime)
                             elif most_common[0][0]!=lstActivityLabel[-1]:
                                 lstActivityLabel.append(most_common[0][0])
-                                lstActivityTime.append(datetime.now())
+                                lstActivityTime.append(self.temporaryTime)
                             
                             
                         elif self.teachertimeinframes==0 and self.teacherin==True:
-                            lsttimeout.append(datetime.now())
+                            lsttimeout.append(self.temporaryTime)
                             self.teacherin= False
                         self.totalteachertimeframes=0
                         self.teachertimeinframes=0
@@ -147,7 +149,19 @@ class RTSPVideoWriterObject(object):
                         totaltimein = int(totalsec/60)
                     totaltimeout = overalltimemin-totaltimein
                     checktime_object =  apichecktime.CheckTimeApi(checktime=mchecktime)
-                    ctime = mchecktime.CheckTime(id=0,teacherSlotID=self.slotId,totaltimein=totaltimein,totaltimeout=totaltimeout,date=str(datetime.now().date()))
+                    lsttimestamps=[]
+                    for tempActivityTime,tempActivityLabel in zip(lstActivityTime,lstActivityLabel):
+                        timestamp_str = tempActivityTime.strftime("%Y-%m-%d %H:%M:%S.%f")
+                        timestamps = timestamp_str+' '+tempActivityLabel
+                        print(timestamps)
+                        lsttimestamps.append(timestamps)
+                    currentTime = datetime.now()
+                    currentTime = currentTime.strftime("%Y-%m-%d %H:%M:%S.%f")
+                    currentTime=currentTime+' '+''
+                    lsttimestamps.append(currentTime)
+                    standing_duration, mobile_duration, sitting_duration= self.calculate_activity_duration(timestamps=lsttimestamps)
+                    print(standing_duration, mobile_duration, sitting_duration)
+                    ctime = mchecktime.CheckTime(id=0,teacherSlotID=self.slotId,totaltimein=totaltimein,totaltimeout=totaltimeout,date=str(datetime.now().date()),sit=sitting_duration,stand=standing_duration,mobile=mobile_duration)
                     checktime_object.add_checktime(checktime=ctime)
                     checktime =checktime_object.checksingletime_details(teacherSlotID=self.slotId)
                     checktimedata = checktime
@@ -160,11 +174,11 @@ class RTSPVideoWriterObject(object):
                         teacherSlot.slot = 0
                         teacherslot_object.update_teacherslots_details(teacherslots=teacherSlot)
                     else:
-                        if totaltimeout>=1:
+                        if totaltimeout>=2:
                             teacherSlot = mteacherslots.TeacherSlot
                             teacherSlot.id=self.slotId
                             teacherSlot.timetableId=self.timetableId
-                            teacherSlot.status="Late + Held"
+                            teacherSlot.status="Late"
                             teacherSlot.slot = 0
                             teacherslot_object.update_teacherslots_details(teacherslots=teacherSlot)
                         else:
@@ -175,11 +189,8 @@ class RTSPVideoWriterObject(object):
                             teacherSlot.slot = 0
                         
                             teacherslot_object.update_teacherslots_details(teacherslots=teacherSlot)
-                    for (timein,timeout) in zip(lsttimein,lsttimeout):
-                        # activityCount=0
-                        # for tempActivityTime in lstActivityTime:
-                        #     print(tempActivityTime)
-                                    
+                    
+                    for (timein,timeout) in zip(lsttimein,lsttimeout):                
                         checktimedetails_object =  apichecktimedetails.CheckTimeDetailsApi(checktimedetails=mchecktimedetails)
                         ctimedetails = mchecktimedetails.CheckTimeDetails(id=0,checkTimeID=checktimedata.id,timein=timein,timeout=timeout,sit=0,stand=0,mobile=0)
                         datetime.now()
@@ -305,6 +316,7 @@ class RTSPVideoWriterObject(object):
             pass
         else:
             self._key_lock.acquire()
+            label=''
             temp_image_path = f'temp{self.timetableId}.JPG'
             cv2.imwrite(temp_image_path,self.frame)
             image = cv2.imread(temp_image_path)
@@ -321,8 +333,8 @@ class RTSPVideoWriterObject(object):
                 #print(np.linalg.norm(np.expand_dims(self.image_encodings,axis=0) - face_encoding, axis=1))
                 matches = face_recognition.compare_faces(np.expand_dims(self.image_encodings,axis=0),face_encoding)
                 if True in matches:
-                    #label = self.checkActivity(image)
-                    label='Sit'
+                    label = self.checkActivity(image)
+                    #label='Sit'
                     self.activityLabel.append(label)
                     self.teachertimeinframes+=1
                 else:
@@ -357,7 +369,52 @@ class RTSPVideoWriterObject(object):
             for c in r[0].boxes.cls:
                 label = f'{class_names[int(c)]} '
                 return label
-    
-       
+            
+    def calculate_activity_duration(self,timestamps):
+        standing_duration = 0
+        mobile_duration = 0
+        sitting_duration = 0
+
+        for i in range(len(timestamps)-1):
+            ctime = timestamps[i].split(' ')[0]+' '+timestamps[i].split(' ')[1]
+            ntime = timestamps[i+1].split(' ')[0]+' '+timestamps[i+1].split(' ')[1]
+            current_time = datetime.strptime(ctime, "%Y-%m-%d %H:%M:%S.%f")
+            next_time = datetime.strptime(ntime, "%Y-%m-%d %H:%M:%S.%f")
+            duration = (next_time - current_time).total_seconds()
+
+           
+            if "Stand" in timestamps[i]:
+                standing_duration += duration
+            elif "Mobile" in timestamps[i]:
+                mobile_duration += duration
+            elif "Sit" in timestamps[i]:
+                sitting_duration += duration
+
+        standing_duration /= 60
+        mobile_duration /= 60
+        sitting_duration /= 60
+        
+        
+        intStanding_duration= int(standing_duration)
+        strStanding_duration=str(standing_duration).split('.')[1][0]
+
+        if int(strStanding_duration)>=5:
+            intStanding_duration+=1
+            
+        intMobile_duration= int(mobile_duration)
+        strMobile_duration=str(mobile_duration).split('.')[1][0]
+
+        if int(strMobile_duration)>=5:
+            intMobile_duration+=1
+            
+        intSitting_duration= int(sitting_duration)
+        strSitting_duration=str(sitting_duration).split('.')[1][0]
+
+        if int(strSitting_duration)>=5:
+            intSitting_duration+=1
+
+        return intStanding_duration, intMobile_duration, intSitting_duration
+        
+        
 
 

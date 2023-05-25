@@ -1,5 +1,6 @@
     
 from sql import MySQL
+import Model.TimeTable as mTimeTable
 
 
 class RulesApi:
@@ -44,3 +45,58 @@ class RulesApi:
                         ''')
 
         return "Added"
+    def getTeacherRulesTimeTable(self,teacherName):
+        sql = MySQL()
+        sql.__enter__()
+        cursor = sql.conn.cursor()
+        cursor.execute(f'''                     
+                        SELECT * FROM TIMETABLE t Left Join Rules r 
+                        on t.ID=r.TimetableId WHERE 
+                        t.TeacherName Like '%{teacherName}%' AND t.SessionId=
+                        (SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
+                        ''')
+        lstTimeTable=[]
+        startRecord=0
+        midRecord=0
+        endRecord=0
+        fullRecord=0
+        for row in cursor.fetchall():  
+            st = row.StartTime.split(':')
+            et = row.EndTime.split(':')
+            st = f'{st[0]}:{st[1]}'
+            et = f'{et[0]}:{et[1]}'
+            if row.StartRecord==None:
+                lstTimeTable.append(mTimeTable.TimeTableRules(id=row[0],discipline=row.Discipline
+                                                    ,starttime=st,
+                                                    endtime=et,
+                                                    day=row.Day,
+                                                    courseCode=row.CourseCode,
+                                                    venue=row.Venue,
+                                                    teacherName=row.TeacherName,
+                                                    courseName=row.CourseName,
+                                                    isSelected=False,
+                                                    sessionName="",
+                                                    sessionId=row.SessionId))
+            else:
+                startRecord=row.StartRecord
+                endRecord=row.EndRecord
+                midRecord=row.MidRecord
+                fullRecord=row.FullRecord
+                lstTimeTable.append(mTimeTable.TimeTableRules(id=row[0],discipline=row.Discipline
+                                                    ,starttime=st,
+                                                    endtime=et,
+                                                    day=row.Day,
+                                                    courseCode=row.CourseCode,
+                                                    venue=row.Venue,
+                                                    teacherName=row.TeacherName,
+                                                    courseName=row.CourseName,
+                                                    isSelected=True,
+                                                    sessionName="",
+                                                    sessionId=row.SessionId))
+        return {
+            'data':lstTimeTable,
+            'startRecord':startRecord,
+            'midRecord':midRecord,
+            'endRecord':endRecord,
+            'fullRecord':fullRecord
+        }
