@@ -69,12 +69,12 @@ class AttendanceApi:
         face_locations = face_recognition.face_locations(test_image)
         face_encodings = face_recognition.face_encodings(test_image,face_locations)
         lst=[]
-        cursor.execute(f'''
-                       SELECT  s.*,e.ID FROM TIMETABLE t Inner Join OFFERED_COURSES oc On
+        cursor.execute(f'''                 
+                       SELECT  s.*,e.ID,t.StartTime FROM TIMETABLE t Inner Join OFFERED_COURSES oc On
                        oc.CourseCode=t.CourseCode Inner Join SECTION_OFFER so On so.CourseOfferId=oc.ID Inner Join
                        ENROLL e on e.SectionOfferID=so.ID Inner Join STUDENT s on
-                       s.AridNo = e.StudentID WHERE t.TeacherName='Dr. Hassan' AND
-                       t.Day='Friday' AND t.StartTime='10:00:00.000000'
+                       s.AridNo = e.StudentID WHERE t.TeacherName Like 'Umer%' AND
+                       t.Day='Friday' AND t.StartTime='11:30:00.000000'
                        ''')
         
         for row in cursor.fetchall():
