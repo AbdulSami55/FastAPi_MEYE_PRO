@@ -27,6 +27,8 @@ import Model.Recordings as mrecordings
 import ApiFunctions.Recordings as apirecordings
 import Model.Reschedule as mreschedule
 import ApiFunctions.Reshedule as apireschedule
+import Model.Preschedule as mpreschedule
+import ApiFunctions.Preschedule as apipreschedule
 import Model.TeacherSlots as mteacherslots
 import ApiFunctions.Offered_Courses as apiOfferedCourses
 import Model.Offered_Courses as mOfferedCourses
@@ -52,7 +54,7 @@ from ultralytics import YOLO
 
 # nest_asyncio.apply()
 
-networkip = '192.168.43.192'
+networkip = '192.168.0.104'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -235,7 +237,7 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
     stime= st
     etime =  et
     s=1
-    e=0
+    e=1
     f=0
     print(ip, s, e, f,stime,etime,day,teacherName)
     
@@ -251,6 +253,21 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
 async def get_video(id:str,type:str):
     video_path = f"Recordings/file,{id},{type}"
     return FileResponse(video_path, media_type="video/mp4")
+
+
+# @app.get("/")
+# def startServer():
+#     sql = MySQL()
+#     sql.__enter__()
+#     cursor = sql.conn.cursor()
+#     cursor.execute(f'''
+#                    Select * From TIMETABLE t left Join TEACHERSLOTS ts 
+#                    on ts.TimeTableId=t.ID
+#                    left Join RESCHEDULE r on ts.ID=r.TeacherSlotId
+#                    ''')
+#     for row in cursor.fetchall():
+#         if row[6]=='Monday':
+#             print(row)
 
 
         
@@ -594,7 +611,17 @@ def getAllTeacherCHR():
 def getAllTeacherCHR(rules:List[mRules.Rules],teacherName:str):
     return rules_object.add_rules(rules=rules,teacherName=teacherName)
 
-        
+@app.get('/api/get-rules-timetable/{teacherName}')
+def getTeacherRulesTimeTable(teacherName:str):
+    return rules_object.getTeacherRulesTimeTable(teacherName=teacherName)
+
+#------------------------------------------------------------Preschedule------------------------------------------------------ 
+@app.post('/api/add-preschedule') 
+def addpreschedule(preschedule : mpreschedule.Preschedule):
+    return preschedule_object.add_preschedule(preschedule=preschedule)
+
+
+       
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
     camera_object =  apicamera.CameraApi(cam=mcamera)
@@ -605,6 +632,7 @@ if __name__=='__main__':
     section_object = apisection.SectionApi(section=msection)
     recordings_object = apirecordings.RecordingsApi(recordings=mrecordings)
     reschedule_object = apireschedule.RescheduleApi(reschedule=mreschedule)
+    preschedule_object = apipreschedule.PrescheduleApi(preschedule=mpreschedule)
     sectionOffer_object = apiSectionOffer.SectionOfferApi(sectionOffer=mSectionOffer)
     offeredCourses_object = apiOfferedCourses.OfferedCoursesApi(offeredCourses=mOfferedCourses)
     student_object = apiStudent.StudentApi(student=muser)

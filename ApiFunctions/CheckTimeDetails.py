@@ -12,8 +12,8 @@ class CheckTimeDetailsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT t.TeacherName,mu.Image ,ct.ID, t.CourseName,
-                t.Day,t.Discipline,t.StartTime,t.EndTime,
+                SELECT ct.Date,t.TeacherName,mu.Image ,ct.ID, t.CourseName,
+                ct.Sit,ct.Stand,ct.Mobile,t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
                 CHECKTIME ct left Join CHECKTIMEDETAILS ctd on 
@@ -31,7 +31,7 @@ class CheckTimeDetailsApi:
                 sit=row.Sit,
                 stand=row.Stand,
                 mobile=row.Mobile)
-            date=str(row.TimeIn).split(' ')[0]
+          
             index=-1
             for i in lst:
                 if i.id==row.ID:
@@ -48,9 +48,12 @@ class CheckTimeDetailsApi:
                     totalTimeIn=row.TotalTimeIn,
                     totalTimeOut=row.TotalTimeOut,
                     status=row.Status,
-                    date=date,
+                    date=row.Date,
                     teacherName=row.TeacherName,
                     image=row.Image,
+                     sit=row[5],
+                    stand=row[6],
+                    mobile=row[7],
                     teacherCHRActivityDetails=[temp]
                 ))
         
@@ -61,8 +64,8 @@ class CheckTimeDetailsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT t.TeacherName,mu.Image ,ct.ID, t.CourseName,
-                t.Day,t.Discipline,t.StartTime,t.EndTime,
+                SELECT ct.Date,t.TeacherName,mu.Image ,ct.ID, t.CourseName,
+                ct.Sit,ct.Stand,ct.Mobile,t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
                 CHECKTIME ct left Join CHECKTIMEDETAILS ctd on 
@@ -79,7 +82,7 @@ class CheckTimeDetailsApi:
                 sit=row.Sit,
                 stand=row.Stand,
                 mobile=row.Mobile)
-            date=str(row.TimeIn).split(' ')[0]
+            
             index=-1
             for i in lst:
                 if i.id==row.ID:
@@ -96,9 +99,12 @@ class CheckTimeDetailsApi:
                     totalTimeIn=row.TotalTimeIn,
                     totalTimeOut=row.TotalTimeOut,
                     status=row.Status,
-                    date=date,
+                    date=row.Date,
                     teacherName=row.TeacherName,
                     image=row.Image,
+                    sit=row[5],
+                    stand=row[6],
+                    mobile=row[7],
                     teacherCHRActivityDetails=[temp]
                 ))
         

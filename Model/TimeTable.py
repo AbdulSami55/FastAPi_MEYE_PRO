@@ -22,7 +22,7 @@ class EndTime(Enum):
     TIME_3 = '01:00'
     TIME_4 = '03:00'
     TIME_5 = '04:30'
-    
+
 class TimeTable(BaseModel):
     id : int
     discipline : str
@@ -33,6 +33,20 @@ class TimeTable(BaseModel):
     courseName:str
     venue:str  
     teacherName:str 
+    sessionId:Optional[str]=None
+    sessionName:Optional[str]=None
+     
+class TimeTableRules(BaseModel):
+    id : int
+    discipline : str
+    starttime : StartTime
+    endtime : EndTime
+    day:Day
+    courseCode:str
+    courseName:str
+    venue:str  
+    teacherName:str 
+    isSelected:bool
     sessionId:Optional[str]=None
     sessionName:Optional[str]=None
     
