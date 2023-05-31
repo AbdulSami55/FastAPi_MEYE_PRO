@@ -6,7 +6,7 @@ import Model.Recordings as mrecordings
 import Model.TimeTable as mtimetable 
 import Model.Section as msection
 import Model.Venue as mvenue
-
+import os
 
 class RecordingsApi:
     def __init__(self,recordings) -> None:
@@ -17,15 +17,29 @@ class RecordingsApi:
         sql.__enter__()
         cursor = sql.conn.cursor()
         cursor.execute(f'''
-                SELECT * FROM RECORDINGS
+                    SELECT  t.CourseCode,t.CourseName,t.TeacherName,t.Discipline,
+                    t.Venue,t.Day,t.StartTime,t.EndTime,r.DATE,ts.Status,ts.Slot,r.FILENAME 
+                    FROM TIMETABLE t INNER JOIN TEACHERSLOTS ts 
+                    ON t.ID=ts.TimeTableId INNER JOIN RECORDINGS r on r.TeacherSlotId=ts.ID AND t.SessionId
+                    =(SELECT TOP 1 SESSION.ID FROM SESSION ORDER BY ID DESC)
                     ''')
-        lst=[]
+        lstRecording=[]
         for row in cursor.fetchall():
-            lst.append(self.recordings.Recordings(id=row.ID,teacherSlotID=row.TeacherSlotId,
-                                                  filename=row.FILENAME,
-                                                  date=row.DATE))
+            st = row.StartTime.split(':')
+            et = row.EndTime.split(':')
+            st = f'{st[0]}:{st[1]}'
+            et = f'{et[0]}:{et[1]}'
+            date = str(row.DATE).split(' ')[0]
+            lst = os.listdir('G:/FYP/FYP_Practise/FastAPi/Recordings/Thumbnails/')
+            for i in lst:
+                if i.split('.')[0]==row.FILENAME.split('/')[1].split('.')[0]:
+                    lstRecording.append(self.recordings.RecordingsDetail(courseCode=row.CourseCode,courseName=row.CourseName,
+                                                                teacherName=row.TeacherName,discipline=row.Discipline,
+                                        venue = row.Venue,day=row.Day,startTime=st,endTime=et,
+                                        date=date,status=row.Status,slot=row.Slot,fileName=row.FILENAME,thumbnail=i))
+        return lstRecording
         
-        return {"data":lst}
+
     
     def recordings_details_byteacherid(self,teacherName):
         sql = MySQL()
@@ -45,10 +59,13 @@ class RecordingsApi:
             st = f'{st[0]}:{st[1]}'
             et = f'{et[0]}:{et[1]}'
             date = str(row.DATE).split(' ')[0]
-            lstRecording.append(self.recordings.RecordingsDetail(courseCode=row.CourseCode,courseName=row.CourseName,
-                                                           teacherName=row.TeacherName,discipline=row.Discipline,
-                                venue = row.Venue,day=row.Day,startTime=st,endTime=et,
-                                date=date,status=row.Status,slot=row.Slot,fileName=row.FILENAME))
+            lst = os.listdir('G:/FYP/FYP_Practise/FastAPi/Recordings/Thumbnails/')
+            for i in lst:
+                if i.split('.')[0]==row.FILENAME.split('/')[1].split('.')[0]:
+                    lstRecording.append(self.recordings.RecordingsDetail(courseCode=row.CourseCode,courseName=row.CourseName,
+                                                                teacherName=row.TeacherName,discipline=row.Discipline,
+                                        venue = row.Venue,day=row.Day,startTime=st,endTime=et,
+                                        date=date,status=row.Status,slot=row.Slot,fileName=row.FILENAME,thumbnail=i))
         return lstRecording
         
     

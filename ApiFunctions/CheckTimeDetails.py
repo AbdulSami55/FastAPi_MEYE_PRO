@@ -14,7 +14,7 @@ class CheckTimeDetailsApi:
         cursor.execute(f'''
                 SELECT ct.Date,t.TeacherName,mu.Image ,ct.ID, t.CourseName,
                 ct.Sit,ct.Stand,ct.Mobile,t.Day,t.Discipline,t.StartTime,t.EndTime,
-                ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
+                ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,t.Venue,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
                 CHECKTIME ct left Join CHECKTIMEDETAILS ctd on 
                 ct.ID=ctd.CheckTimeId Inner Join 
@@ -51,6 +51,7 @@ class CheckTimeDetailsApi:
                     date=row.Date,
                     teacherName=row.TeacherName,
                     image=row.Image,
+                    venue=row.Venue,
                      sit=row[5],
                     stand=row[6],
                     mobile=row[7],
@@ -66,7 +67,7 @@ class CheckTimeDetailsApi:
         cursor.execute(f'''
                 SELECT ct.Date,t.TeacherName,mu.Image ,ct.ID, t.CourseName,
                 ct.Sit,ct.Stand,ct.Mobile,t.Day,t.Discipline,t.StartTime,t.EndTime,
-                ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,
+                ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,t.Venue,
                 ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
                 CHECKTIME ct left Join CHECKTIMEDETAILS ctd on 
                 ct.ID=ctd.CheckTimeId Inner Join 
@@ -102,6 +103,7 @@ class CheckTimeDetailsApi:
                     date=row.Date,
                     teacherName=row.TeacherName,
                     image=row.Image,
+                      venue=row.Venue,
                     sit=row[5],
                     stand=row[6],
                     mobile=row[7],

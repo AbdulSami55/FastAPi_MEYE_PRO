@@ -252,6 +252,7 @@ class RTSPVideoWriterObject(object):
                 #         cursor.execute(f'''
                 #             UPDATE TEACHERSLOTS SET STATUS='{-1}' WHERE ID='{self.slotid}'
                 #                 ''')
+                cv2.imwrite(f'Recordings/Thumbnails/file,{self.slotId},start_recording.jpg',frame)
                 start_video.release()
                 print("done start")
                 
@@ -275,6 +276,7 @@ class RTSPVideoWriterObject(object):
                 end_video.write(frame)
                 count = 0
             if count == 0:
+                cv2.imwrite(f'Recordings/Thumbnails/file,{self.slotId},end_recording.jpg',frame)
                 end_video.release()
                 print("done end")
                 recording = mrecordings.Recordings(id=0,teacherSlotID=self.slotId,filename=fename,date=str(datetime.now().date()))
@@ -289,6 +291,7 @@ class RTSPVideoWriterObject(object):
             frame = cv2.resize(self.frame, (self.frame_width, self.frame_height))
             complete_video.write(frame)
             if datetime.now().time() > self.et.time():
+                cv2.imwrite(f'Recordings/Thumbnails/file,{self.slotId},complete_recording.jpg',frame)
                 complete_video.release()
                 print("done complete")
                 recording = mrecordings.Recordings(id=0,teacherSlotID=self.slotId,filename=fcname,date=str(datetime.now().date()))

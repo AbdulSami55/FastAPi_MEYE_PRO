@@ -16,7 +16,7 @@ class RulesApi:
             lstTimetableId.append(timetable.timeTableId)
         cursor.execute(f'''
                      SELECT r.TimetableId FROM RULES r Inner JOin 
-                     TIMETABLE t on t.ID=r.TimetableId Where t.TeacherName='{teacherName}'  
+                     TIMETABLE t on t.ID=r.TimetableId Where t.TeacherName Like '{teacherName}%'  
                        ''')
         for row in cursor.fetchall():
             if row.TimetableId not in lstTimetableId:

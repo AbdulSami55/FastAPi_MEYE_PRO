@@ -15,8 +15,10 @@ class RecordingsDetail(BaseModel):
     status:str
     slot:int
     fileName:str
+    thumbnail:str
 class Recordings(BaseModel):
     id:int
     teacherSlotID:int
     filename:str
     date:str
+    

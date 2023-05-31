@@ -28,4 +28,15 @@ class StudentCourses(BaseModel):
     discipline:str
     image:str
     percentage:float
+    
+class SwappingUser(BaseModel):
+    id:Optional[int]=None
+    userID:Optional[str]=None
+    name:Optional[str]=None
+    image:Optional[str] = None
+    password:Optional[str]=None
+    role:Role
+    timeTableId:int
+    venue:str
+    discipline:str
 

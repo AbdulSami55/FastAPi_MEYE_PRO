@@ -63,7 +63,9 @@ class TimeTableApi:
         
         while start_date <= end_date:
             cursor.execute(f'''
-                Select t.ID,t.TeacherName,t.CourseCode,t.CourseName,t.Discipline,r.Venue,r.StartTime,r.EndTime,r.Day,t.SessionId,s.Name From RESCHEDULE r Inner Join TEACHERSLOTS ts 
+                Select t.ID,t.TeacherName,t.CourseCode,t.CourseName,t.Discipline,
+                r.Venue,r.StartTime,r.EndTime,r.Day,t.SessionId,s.Name From RESCHEDULE 
+                r Inner Join TEACHERSLOTS ts 
                 on ts.ID=r.TeacherSlotId Inner Join TIMETABLE t on 
                 t.ID=ts.TimeTableId INNER JOIN SESSION s on 
                 t.SessionId = s.ID and r.Date='{start_date.strftime('%Y-%m-%d')}'

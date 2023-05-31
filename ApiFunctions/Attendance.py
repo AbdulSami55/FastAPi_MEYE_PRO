@@ -73,7 +73,7 @@ class AttendanceApi:
                        SELECT  s.*,e.ID,t.StartTime FROM TIMETABLE t Inner Join OFFERED_COURSES oc On
                        oc.CourseCode=t.CourseCode Inner Join SECTION_OFFER so On so.CourseOfferId=oc.ID Inner Join
                        ENROLL e on e.SectionOfferID=so.ID Inner Join STUDENT s on
-                       s.AridNo = e.StudentID WHERE t.TeacherName Like 'Umer%' AND
+                       s.AridNo = e.StudentID WHERE t.TeacherName Like 'Dr. Hassan%' AND
                        t.Day='Friday' AND t.StartTime='11:30:00.000000'
                        ''')
         

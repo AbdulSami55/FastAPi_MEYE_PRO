@@ -36,4 +36,5 @@ class TeacherCHRDetails(BaseModel):
     sit:str
     stand:str
     mobile:str
+    venue:str
     teacherCHRActivityDetails:List[TeacherCHRActivityDetails]

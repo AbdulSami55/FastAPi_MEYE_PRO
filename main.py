@@ -40,6 +40,8 @@ import ApiFunctions.Attendance as apiAttendance
 import Model.Attendance as mAttendance
 import ApiFunctions.Rules as apiRules
 import Model.Rules as mRules
+import ApiFunctions.Swapping as apiSwapping
+import Model.Swapping as mSwapping
 import ApiFunctions.CheckTimeDetails as apiCheckTimeDetails
 import Model.CheckTimeDetails as mCheckTimeDetails
 # import nest_asyncio
@@ -54,7 +56,7 @@ from ultralytics import YOLO
 
 # nest_asyncio.apply()
 
-networkip = '192.168.0.104'
+networkip = '192.168.43.192'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
@@ -233,7 +235,7 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
     img = cv2.imread('temp895 - Copy.JPG')
     model.predict(img,stream=True, imgsz=640)
     st = datetime.now()
-    et = st + timedelta(minutes=4)
+    et = st + timedelta(minutes=5)
     stime= st
     etime =  et
     s=1
@@ -281,6 +283,7 @@ def start_stream():
                    TIMETABLE t On TEMPORARY_TIMETABLE.TimeTableId = t.ID 
                    Inner Join VENUE v On t.Venue=v.NAME INNER JOIN CAMERA 
                    C ON  C.VenueId = v.ID INNER JOIN DVR d ON d.ID=C.DvrID
+                   Where t.ID=668
                    ''')
     for timetable in cursor.fetchall():
         t1 = threading.Thread(target=cam, args=(f'rtsp://{timetable.IP}:8080/h264_ulaw.sdp', timetable.StartRecord, timetable.EndRecord, timetable.FullRecord,timetable.StartTime,timetable.EndTime,timetable.Day,timetable.TeacherName,timetable.TimeTableId))
@@ -351,6 +354,7 @@ def userdetails():
 @app.get('/api/get-user-image/UserImages/{foldername}/{imagename}') 
 def getuserimage(foldername:str,imagename:str):
     return FileResponse(f'UserImages/{foldername}/{imagename}')
+
 
     
 @app.put('/api/update-user-details') 
@@ -518,6 +522,9 @@ def recordingsdetails():
 def recordingsdetailsbyteacherid(teacherName:str):
     return recordings_object.recordings_details_byteacherid(teacherName=teacherName)
 
+@app.get('/api/get-video-thumbnail/{imagename}') 
+def getuserimage(imagename:str):
+    return FileResponse(f'Recordings/Thumbnails/{imagename}')
   
 @app.put('/api/update-recordings-details') 
 def updaterecordingsdetails(recordings : mrecordings.Recordings):
@@ -621,6 +628,17 @@ def addpreschedule(preschedule : mpreschedule.Preschedule):
     return preschedule_object.add_preschedule(preschedule=preschedule)
 
 
+#------------------------------------------------------------Swapping------------------------------------------------------ 
+@app.post('/api/add-swapping') 
+def addswapping(swapping : mSwapping.Swapping):
+    return swaping_object.add_swapping(swapping=swapping)
+
+
+@app.get('/api/get-swapping-teacher-data')
+def getSwappingTeacherData(day:str,startTime:str,endTime:str,timeTableId:int):
+    return swaping_object.getSwappingTeacherData(day=day,startTime=startTime,endTime=endTime,timeTableId=timeTableId)
+
+
        
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
@@ -639,6 +657,7 @@ if __name__=='__main__':
     attendance_object = apiAttendance.AttendanceApi(attendance=mAttendance)
     checkTimeDetails_object = apiCheckTimeDetails.CheckTimeDetailsApi(checktimedetails=mCheckTimeDetails)
     rules_object = apiRules.RulesApi(rules=mRules)
+    swaping_object = apiSwapping.SwappingApi(swapping=mSwapping)
     uvicorn.run(app, host=networkip,port=networkport)
     
     
