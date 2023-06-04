@@ -54,9 +54,8 @@ import requests
 import fcmKey
 from ultralytics import YOLO
 
-# nest_asyncio.apply()
 
-networkip = '192.168.43.192'
+networkip = '192.168.0.116'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()

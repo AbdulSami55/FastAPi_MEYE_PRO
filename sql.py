@@ -5,7 +5,7 @@ class MySQL:
 
     def __enter__(self):
         self.conn =pyodbc.connect('Driver={SQL Server};'
-                      'Server=DESKTOP-DKL7AJ3\SQLEXPRESS;'
+                      'Server=DESKTOP-KNM0289;'
                       'Database=MEYEPRO;'
                       'Trusted_Connection=yes;')
         self.conn.autocommit = True

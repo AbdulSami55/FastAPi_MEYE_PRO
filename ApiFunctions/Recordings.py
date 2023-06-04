@@ -30,7 +30,7 @@ class RecordingsApi:
             st = f'{st[0]}:{st[1]}'
             et = f'{et[0]}:{et[1]}'
             date = str(row.DATE).split(' ')[0]
-            lst = os.listdir('G:/FYP/FYP_Practise/FastAPi/Recordings/Thumbnails/')
+            lst = os.listdir('Recordings/Thumbnails/')
             for i in lst:
                 if i.split('.')[0]==row.FILENAME.split('/')[1].split('.')[0]:
                     lstRecording.append(self.recordings.RecordingsDetail(courseCode=row.CourseCode,courseName=row.CourseName,
@@ -59,7 +59,7 @@ class RecordingsApi:
             st = f'{st[0]}:{st[1]}'
             et = f'{et[0]}:{et[1]}'
             date = str(row.DATE).split(' ')[0]
-            lst = os.listdir('G:/FYP/FYP_Practise/FastAPi/Recordings/Thumbnails/')
+            lst = os.listdir('Recordings/Thumbnails/')
             for i in lst:
                 if i.split('.')[0]==row.FILENAME.split('/')[1].split('.')[0]:
                     lstRecording.append(self.recordings.RecordingsDetail(courseCode=row.CourseCode,courseName=row.CourseName,
