@@ -29,7 +29,7 @@ class CheckTimeApi:
                     ''')
         checktime=None
         for row in cursor.fetchall():
-            checktime = self.checktime.CheckTime(teacherSlotID = row.TeacherSlotId,id=row.ID,totaltimein=row.TotalTimeIn,totaltimeout=row.TotalTimeOut,date=row.Date,sit=row.Sit,stand=row.Stand,mobile=row.Mobile)
+            checktime = self.checktime.CheckTime(teacherSlotID = row.TeacherSlotId,id=row.ID,totaltimein=row.TotalTimeIn,totaltimeout=row.TotalTimeOut,date=row.Date,sit=row.Sit,stand=row.Stand)
         
         return checktime
                
@@ -65,7 +65,7 @@ class CheckTimeApi:
                 INSERT INTO CheckTime
                 VALUES
                 ('{checktime.teacherSlotID}','{checktime.totaltimein}','{checktime.totaltimeout}','{checktime.date}'
-                ,'{checktime.sit}','{checktime.stand}','{checktime.mobile}')
+                ,'{checktime.sit}','{checktime.stand}')
                 ''')
 
         return {"data":"okay"}

@@ -17,6 +17,9 @@ import numpy as np
 import Model.TeacherSlots as mteacherslots
 import ApiFunctions.TeacherSlots as apiteacherslots
 from collections import Counter
+import warnings
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
+from numba import jit, cuda
 
 
 class RTSPVideoWriterObject(object):
@@ -51,30 +54,40 @@ class RTSPVideoWriterObject(object):
         self.status=False
         self.ip=ip
         self.activityLabel=[]
-        
+
     def update(self):
         lsttimein=[]
         lsttimeout=[]
-        lstActivityLabel=[]
-        lstActivityTime=[]
+        self.lstActivityLabel=[]
+        self.lstActivityTime=[]
         user_object =  apiuser.UserApi(user=muser)
         user=  user_object.single_user_details(teacherName=self.teacherName,role='Teacher')
         userdata = user['data']
         image =  face_recognition.load_image_file(f'UserImages/Teacher/{userdata.image}')
         self.image_encodings = face_recognition.face_encodings(image)[0]
         self.temporaryTime=None
+        self.isCameraStart=False
         while True:
             #self.capture = cv2.VideoCapture(self.ip)
             if self.capture.isOpened():
                 if datetime.now().time()>self.st.time() and datetime.now().time()<self.et.time():
-                    (self.status, self.frame) = self.capture.read()  
+                    if self.isCameraStart==False:
+                        self.isCameraStart=True
+                        self.cameraThread = threading.Thread(target=self.FrameCapture, args=())
+                        self.cameraThread.start()
+                        
+
+                    # self.tempFrameCount+=1
+                    # if self.tempFrameCount>10:
+                    #     pass
+
                 if self.status and self.sc==0 and datetime.now().time()>self.st.time() and datetime.now().time()<self.et.time():
+                    self.sc+=1
                     self.thread1 = threading.Thread(target=self.check_time, args=())
                     self.thread1.daemon = True
                     self.thread1.start()
-                    self.sc+=1
                 if self.status and datetime.now().time()>self.st.time() and datetime.now().time()<self.et.time():
-                    if self.tempFrameCount>10:
+                    if self.tempFrameCount>30:
                         if self._key_lock.locked():
                             pass
                         else:
@@ -86,19 +99,19 @@ class RTSPVideoWriterObject(object):
                         #self.check_time_using_facial_recognition(tempFrame=tempFrame)
                     else:
                         self.tempFrameCount+=1
-                    if self.totalteachertimeframes>5:
+                    if self.totalteachertimeframes>10:
                         if self.teachertimeinframes>0:
                             if self.teacherin==False:
                                 self.teacherin=True
                                 lsttimein.append(self.temporaryTime)
-                            counted = Counter(self.activityLabel)
-                            most_common = counted.most_common(1)
-                            if lstActivityLabel==[]:
-                                lstActivityLabel.append(most_common[0][0])
-                                lstActivityTime.append(self.temporaryTime)
-                            elif most_common[0][0]!=lstActivityLabel[-1]:
-                                lstActivityLabel.append(most_common[0][0])
-                                lstActivityTime.append(self.temporaryTime)
+                            # counted = Counter(self.activityLabel)
+                            # most_common = counted.most_common(1)
+                            # if lstActivityLabel==[]:
+                            #     lstActivityLabel.append(most_common[0][0])
+                            #     lstActivityTime.append(self.temporaryTime)
+                            # elif most_common[0][0]!=lstActivityLabel[-1]:
+                            #     lstActivityLabel.append(most_common[0][0])
+                            #     lstActivityTime.append(self.temporaryTime)
                             
                             
                         elif self.teachertimeinframes==0 and self.teacherin==True:
@@ -116,6 +129,21 @@ class RTSPVideoWriterObject(object):
                         
                     
                 if self.sc==1 and datetime.now().time()>self.et.time():
+                    if self.totalteachertimeframes>5:
+                        if self.teachertimeinframes>0:
+                            if self.teacherin==False:
+                                self.teacherin=True
+                                lsttimein.append(self.temporaryTime)
+                                self.isEntry=True
+                                print(f'lst of timein={lsttimein}')
+
+                        elif self.teachertimeinframes==0 and self.teacherin==True:
+                            lsttimeout.append(self.temporaryTime)
+                            self.teacherin= False
+                            self.isEntry=True
+                        self.totalteachertimeframes=0
+                        self.teachertimeinframes=0
+                        self.teachertimeoutframes=0
                 
                     if self.teacherin==True :
                         lsttimeout.append(datetime.now())
@@ -135,7 +163,7 @@ class RTSPVideoWriterObject(object):
                         lsttimeout=[]
                         lsttimein=[]
                     overalltime = datetime.now() - self.st
-                    sec = overalltime.total_seconds()
+                    sec = overalltime.total_seconds() 
                     overalltimemin += int(sec / 60)
                     
                     for (timein,timeout) in zip(lsttimein,lsttimeout):
@@ -149,19 +177,35 @@ class RTSPVideoWriterObject(object):
                         totaltimein = int(totalsec/60)
                     totaltimeout = overalltimemin-totaltimein
                     checktime_object =  apichecktime.CheckTimeApi(checktime=mchecktime)
-                    lsttimestamps=[]
-                    for tempActivityTime,tempActivityLabel in zip(lstActivityTime,lstActivityLabel):
-                        timestamp_str = tempActivityTime.strftime("%Y-%m-%d %H:%M:%S.%f")
-                        timestamps = timestamp_str+' '+tempActivityLabel
-                        print(timestamps)
-                        lsttimestamps.append(timestamps)
-                    currentTime = datetime.now()
-                    currentTime = currentTime.strftime("%Y-%m-%d %H:%M:%S.%f")
-                    currentTime=currentTime+' '+''
-                    lsttimestamps.append(currentTime)
-                    standing_duration, mobile_duration, sitting_duration= self.calculate_activity_duration(timestamps=lsttimestamps)
-                    print(standing_duration, mobile_duration, sitting_duration)
-                    ctime = mchecktime.CheckTime(id=0,teacherSlotID=self.slotId,totaltimein=totaltimein,totaltimeout=totaltimeout,date=str(datetime.now().date()),sit=sitting_duration,stand=standing_duration,mobile=mobile_duration)
+                    if len(self.lstActivityTime)>0 and len(self.lstActivityLabel)>0:
+                        self.lstActivityTime.append(lsttimeout[-1])
+                        if len(self.activityLabel)>0:
+                            self.lstActivityLabel.append(self.activityLabel[-1])
+                        else:
+                            self.lstActivityLabel.append(self.lstActivityLabel[-1])
+                    deltas = [self.lstActivityTime[i + 1] - self.lstActivityTime[i] for i in range(len(self.lstActivityTime) - 1)]
+                    sit_time = 0
+                    stand_time = 0
+                    print(deltas)
+                    for i in range(len(self.lstActivityLabel)-1):
+                        if self.lstActivityLabel[i] == 'Sit':
+                            sit_time += deltas[i].total_seconds()
+                        elif self.lstActivityLabel[i] == 'Stand':
+                            stand_time += deltas[i].total_seconds()
+                        print(f'Sit={sit_time} and Stand={stand_time}')
+                    # lsttimestamps=[]
+                    # for tempActivityTime,tempActivityLabel in zip(self.lstActivityTime,self.lstActivityLabel):
+                    #     timestamp_str = tempActivityTime.strftime("%Y-%m-%d %H:%M:%S.%f")
+                    #     timestamps = timestamp_str+' '+tempActivityLabel
+                    #     print(timestamps)
+                    #     lsttimestamps.append(timestamps)
+                    # currentTime = datetime.now()
+                    # currentTime = currentTime.strftime("%Y-%m-%d %H:%M:%S.%f")
+                    # currentTime=currentTime+' '+''
+                    # lsttimestamps.append(currentTime)
+                    # standing_duration, mobile_duration, sitting_duration= self.calculate_activity_duration(timestamps=lsttimestamps)
+                    # print(standing_duration, mobile_duration, sitting_duration)
+                    ctime = mchecktime.CheckTime(id=0,teacherSlotID=self.slotId,totaltimein=totaltimein,totaltimeout=totaltimeout,date=str(datetime.now().date()),sit=sit_time,stand=stand_time,mobile=0)
                     checktime_object.add_checktime(checktime=ctime)
                     checktime =checktime_object.checksingletime_details(teacherSlotID=self.slotId)
                     checktimedata = checktime
@@ -197,10 +241,16 @@ class RTSPVideoWriterObject(object):
                         checktimedetails_object.add_checktimedetails(checktimedetails=ctimedetails)   
                     self.sc=0
                     self.readImageCount=0
-            
+            else:
+                self.isCameraStart=False
                     
    
-                
+
+    def FrameCapture(self):
+        while self.isCameraStart:
+            (self.status, self.frame) = self.capture.read() 
+            cv2.imwrite('zframe.jpg',self.frame)
+
         
     # def show_frame(self):
     #     if self.status:
@@ -235,7 +285,7 @@ class RTSPVideoWriterObject(object):
         rt = self.st + timedelta(seconds=60)
         print("start",self.st.time())
         print('record',rt.time())
-        start_video = cv2.VideoWriter(fname, self.codec, 20, (self.frame_width, self.frame_height))
+        start_video = cv2.VideoWriter(fname, self.codec, 30, (self.frame_width, self.frame_height))
         
         while True:
             frame = cv2.resize(self.frame, (self.frame_width, self.frame_height))
@@ -267,7 +317,7 @@ class RTSPVideoWriterObject(object):
         rt = self.et - timedelta(seconds=60)
         print("end", self.et.time())
         print('record', rt.time())
-        end_video = cv2.VideoWriter(fename, self.codec, 20, (self.frame_width, self.frame_height))
+        end_video = cv2.VideoWriter(fename, self.codec, 30, (self.frame_width, self.frame_height))
         while True:
             ct = datetime.now().time()
             while ct > rt.time() and ct<self.et.time():
@@ -286,7 +336,7 @@ class RTSPVideoWriterObject(object):
 
     def complete_recording(self):
         fcname = f'Recordings/file,{self.slotId},complete_recording.mp4'
-        complete_video = cv2.VideoWriter(fcname, self.codec, 20, (self.frame_width, self.frame_height))
+        complete_video = cv2.VideoWriter(fcname, self.codec, 30, (self.frame_width, self.frame_height))
         while True:
             frame = cv2.resize(self.frame, (self.frame_width, self.frame_height))
             complete_video.write(frame)
@@ -338,7 +388,21 @@ class RTSPVideoWriterObject(object):
                 if True in matches:
                     label = self.checkActivity(image)
                     #label='Sit'
-                    self.activityLabel.append(label)
+                    print(f'label={label}')
+                    if label!=None and label!='':
+                        self.activityLabel.append(label)
+                    if len(self.activityLabel)>2:
+                        counted = Counter(self.activityLabel)
+                        most_common = counted.most_common(1)
+                        print(f'Common Label={most_common}')
+                        current_time=datetime.now()
+                        print(f'at Time{current_time}')
+                        if len(self.lstActivityLabel)==0:
+                            self.lstActivityLabel.append(most_common[0][0])
+                            self.lstActivityTime.append(self.temporaryTime)
+                        self.lstActivityLabel.append(most_common[0][0])
+                        self.lstActivityTime.append(current_time)
+                        self.activityLabel=[]
                     self.teachertimeinframes+=1
                 else:
                     self.teachertimeoutframes+=1
@@ -347,18 +411,15 @@ class RTSPVideoWriterObject(object):
                 self.teachertimeoutframes+=1
                 
             self.totalteachertimeframes+=1
-            tempLabel=''
-            if self.teachertimeinframes>0:
-                tempLabel=self.activityLabel[self.teachertimeinframes-1]
             print(f'''
                 Total Frames={self.totalteachertimeframes}
-                Time In Frames={self.teachertimeinframes} Label = {tempLabel}
+                Time In Frames={self.teachertimeinframes}
                 Time Out Frames={self.teachertimeoutframes}
                 ''')
             self._key_lock.release()
        
         
-        
+  
     def checkActivity(self,image):
         results = self.model.predict(image,stream=True, imgsz=640)
         label = self.get_label(results)
@@ -366,12 +427,17 @@ class RTSPVideoWriterObject(object):
         
         
     def get_label(self,results):
-        class_names=['Mobile','Sit','Stand']
+        class_names=['Sit','Stand']
         for r in results:
             label=''
-            for c in r[0].boxes.cls:
-                label = f'{class_names[int(c)]} '
-                return label
+            try:
+                for c in r[0].boxes.cls:
+                    label = f'{class_names[int(c)]}'
+                    return label
+            except:
+                for c in r.boxes.cls:
+                    label = f'{class_names[int(c)]}'
+                    return label
             
     def calculate_activity_duration(self,timestamps):
         standing_duration = 0

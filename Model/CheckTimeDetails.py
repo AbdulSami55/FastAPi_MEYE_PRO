@@ -8,17 +8,13 @@ class CheckTimeDetails(BaseModel):
     checkTimeID:int
     timein:datetime
     timeout:datetime
-    sit:int
-    stand:int
-    mobile:int
-    
 
 class TeacherCHRActivityDetails(BaseModel):
     timein:Optional[datetime]
     timeout:Optional[datetime]
-    sit:Optional[int]
-    stand:Optional[int]
-    mobile:Optional[int]
+    sit:Optional[str]
+    stand:Optional[str]
+  
     
 class TeacherCHRDetails(BaseModel):
     id:int
@@ -35,6 +31,5 @@ class TeacherCHRDetails(BaseModel):
     image:str
     sit:str
     stand:str
-    mobile:str
     venue:str
     teacherCHRActivityDetails:List[TeacherCHRActivityDetails]

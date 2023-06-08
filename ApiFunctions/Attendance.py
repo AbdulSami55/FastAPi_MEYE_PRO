@@ -1,5 +1,4 @@
 from datetime import datetime
-import threading
 from typing import List
 import cv2
 import face_recognition
@@ -58,7 +57,7 @@ class AttendanceApi:
                 await  main.send_notification("","Absent")
         return "Attendance Marked"
     
-    def mark_attendance(self,img):
+    async def mark_attendance(self,img):
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
@@ -83,6 +82,36 @@ class AttendanceApi:
                   {row.Name} Attendance Marked
                   ''')
         return lst
+    
+
+
+    def mark_attendance_by_video(self,img,lstAttendance,index):
+        sql = MySQL()
+        sql.__enter__()
+        cursor = sql.conn.cursor()
+        # test_image =  face_recognition.load_image_file(img)
+        # face_encodings = face_recognition.face_encodings(test_image)
+        # test_image = cv2.imread(img)
+        test_image=img
+        test_image = cv2.resize(test_image, (0, 0), fx=0.5, fy=0.5)
+        face_locations = face_recognition.face_locations(test_image)
+        face_encodings = face_recognition.face_encodings(test_image,face_locations)
+        lst=[]
+        cursor.execute(f'''                 
+                       SELECT  s.*,e.ID,t.StartTime FROM TIMETABLE t Inner Join OFFERED_COURSES oc On
+                       oc.CourseCode=t.CourseCode Inner Join SECTION_OFFER so On so.CourseOfferId=oc.ID Inner Join
+                       ENROLL e on e.SectionOfferID=so.ID Inner Join STUDENT s on
+                       s.AridNo = e.StudentID WHERE t.TeacherName Like 'Dr. Hassan%' AND
+                       t.Day='Friday' AND t.StartTime='11:30:00.000000'
+                       ''')
+        
+        for row in cursor.fetchall():
+            lst.append(self.mark_and_save_attendance(face_encodings,row.Image,row.ID,row.Name))
+            print(f'''
+                  {row.Name} Attendance Marked
+                  ''')
+        lstAttendance[index]=lst
+    
     def mark_and_save_attendance(self,face_encodings,Image,ID,Name):
         try:
             image = cv2.imread(f'UserImages/Student/{Image}')

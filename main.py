@@ -9,6 +9,7 @@ from pydantic import BaseModel
 import uvicorn
 from fastapi.responses import FileResponse,StreamingResponse
 import cv2
+from LiveVideo import LiveStreaming
 import Model.DVR as mdvr
 import Model.User as muser
 import ApiFunctions.DVR as apidvr
@@ -44,6 +45,8 @@ import ApiFunctions.Swapping as apiSwapping
 import Model.Swapping as mSwapping
 import ApiFunctions.CheckTimeDetails as apiCheckTimeDetails
 import Model.CheckTimeDetails as mCheckTimeDetails
+from VideoAttendance import VideoAttendance
+from VideoDemo import DemoVideo
 # import nest_asyncio
 from VideoRecording import RTSPVideoWriterObject
 from parse_excel import Parse_Excel
@@ -55,11 +58,11 @@ import fcmKey
 from ultralytics import YOLO
 
 
-networkip = '192.168.0.116'
+networkip = '192.168.0.104'
 networkport = 8000
 # 'rtsp://192.168.0.108:8080/h264_ulaw.sdp'
 app = FastAPI()
-model = YOLO('ActivityRecognition/best.pt')
+model = YOLO('ActivityRecognition/xbest.pt')
 
 app.add_middleware(
     CORSMiddleware,
@@ -234,20 +237,16 @@ def cam(ip, s, e, f,stime,etime,day,teacherName,timetableId):
     img = cv2.imread('temp895 - Copy.JPG')
     model.predict(img,stream=True, imgsz=640)
     st = datetime.now()
-    et = st + timedelta(minutes=5)
+    et = st + timedelta(minutes=2)
     stime= st
     etime =  et
-    s=1
-    e=1
+    s=0
+    e=0
     f=0
     print(ip, s, e, f,stime,etime,day,teacherName)
     
-    video_stream_widget = RTSPVideoWriterObject(ip, s, e, f,stime, etime,day,teacherName,timetableId,slotid,model)
-    while True:
-        try:
-            video_stream_widget.show_frame()
-        except AttributeError:
-            pass
+    video_stream_widget = LiveStreaming()
+    video_stream_widget.update(st=stime,et=etime,model=model,teacherName=teacherName,slotId=slotid,ip=ip)
 
 
 @app.get("/api/videos")
@@ -282,7 +281,7 @@ def start_stream():
                    TIMETABLE t On TEMPORARY_TIMETABLE.TimeTableId = t.ID 
                    Inner Join VENUE v On t.Venue=v.NAME INNER JOIN CAMERA 
                    C ON  C.VenueId = v.ID INNER JOIN DVR d ON d.ID=C.DvrID
-                   Where t.ID=668
+                   Where t.ID=485
                    ''')
     for timetable in cursor.fetchall():
         t1 = threading.Thread(target=cam, args=(f'rtsp://{timetable.IP}:8080/h264_ulaw.sdp', timetable.StartRecord, timetable.EndRecord, timetable.FullRecord,timetable.StartTime,timetable.EndTime,timetable.Day,timetable.TeacherName,timetable.TimeTableId))
@@ -637,8 +636,40 @@ def addswapping(swapping : mSwapping.Swapping):
 def getSwappingTeacherData(day:str,startTime:str,endTime:str,timeTableId:int):
     return swaping_object.getSwappingTeacherData(day=day,startTime=startTime,endTime=endTime,timeTableId=timeTableId)
 
+#------------------------------------------------------------Demo------------------------------------------------------ 
 
+class Demo(BaseModel):
+    file:str
+    thumbnail:str
+@app.get('/api/demo')
+def getDemo():
+    videoList = os.listdir('D:/New folder/videos')
+    videoThumbnails = os.listdir('D:/New folder/Thumbnails/')
+    demoList = []
+    for i in range(len(videoList)):
+        demoList.append(Demo(file=videoList[i],thumbnail=videoThumbnails[i]))
+    return demoList
+
+
+@app.get("/api/demovideos")
+async def get_video(file:str):
+    object = DemoVideo(f'D:/New folder/videos/{file}',model,file.split(' ')[0])
+    response =object.update()
+    return response
+
+
+@app.get("/api/demothumbnail")
+async def get_video(file:str):
+    video_path = f"D:/New folder/Thumbnails/{file}"
+    return FileResponse(video_path)
        
+@app.get("/api/demo_video_attendance")
+async def get_video(file:str):
+    file=f'D:/New folder/attendance_videos/{file}'
+    object = VideoAttendance()
+    response =object.markAttendance(videoFile=file,startTime=10,midTime=20,endTime=40)
+    return response
+
 if __name__=='__main__':
     dvr_object =  apidvr.DVRApi(dvr=mdvr)
     camera_object =  apicamera.CameraApi(cam=mcamera)

@@ -13,9 +13,9 @@ class CheckTimeDetailsApi:
         cursor = sql.conn.cursor()
         cursor.execute(f'''
                 SELECT ct.Date,t.TeacherName,mu.Image ,ct.ID, t.CourseName,
-                ct.Sit,ct.Stand,ct.Mobile,t.Day,t.Discipline,t.StartTime,t.EndTime,
+                ct.Sit,ct.Stand,t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,t.Venue,
-                ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
+                ctd.TimeIn,ctd.TimeOut FROM 
                 CHECKTIME ct left Join CHECKTIMEDETAILS ctd on 
                 ct.ID=ctd.CheckTimeId Inner Join 
                 TEACHERSLOTS ts on ts.ID=ct.TeacherSlotId 
@@ -29,8 +29,7 @@ class CheckTimeDetailsApi:
             temp  = mCheckTimeDetails.TeacherCHRActivityDetails(timein=row.TimeIn,
                 timeout=row.TimeOut,
                 sit=row.Sit,
-                stand=row.Stand,
-                mobile=row.Mobile)
+                stand=row.Stand)
           
             index=-1
             for i in lst:
@@ -54,7 +53,6 @@ class CheckTimeDetailsApi:
                     venue=row.Venue,
                      sit=row[5],
                     stand=row[6],
-                    mobile=row[7],
                     teacherCHRActivityDetails=[temp]
                 ))
         
@@ -66,9 +64,9 @@ class CheckTimeDetailsApi:
         cursor = sql.conn.cursor()
         cursor.execute(f'''
                 SELECT ct.Date,t.TeacherName,mu.Image ,ct.ID, t.CourseName,
-                ct.Sit,ct.Stand,ct.Mobile,t.Day,t.Discipline,t.StartTime,t.EndTime,
+                ct.Sit,ct.Stand,t.Day,t.Discipline,t.StartTime,t.EndTime,
                 ct.TotalTimeIn,ct.TotalTimeOut,ts.Status,t.Venue,
-                ctd.TimeIn,ctd.TimeOut,ctd.Sit,ctd.Stand,ctd.Mobile FROM 
+                ctd.TimeIn,ctd.TimeOut FROM 
                 CHECKTIME ct left Join CHECKTIMEDETAILS ctd on 
                 ct.ID=ctd.CheckTimeId Inner Join 
                 TEACHERSLOTS ts on ts.ID=ct.TeacherSlotId 
@@ -81,8 +79,7 @@ class CheckTimeDetailsApi:
             temp  = mCheckTimeDetails.TeacherCHRActivityDetails(timein=row.TimeIn,
                 timeout=row.TimeOut,
                 sit=row.Sit,
-                stand=row.Stand,
-                mobile=row.Mobile)
+                stand=row.Stand)
             
             index=-1
             for i in lst:
@@ -106,7 +103,6 @@ class CheckTimeDetailsApi:
                       venue=row.Venue,
                     sit=row[5],
                     stand=row[6],
-                    mobile=row[7],
                     teacherCHRActivityDetails=[temp]
                 ))
         
@@ -139,14 +135,14 @@ class CheckTimeDetailsApi:
         sql = MySQL()
         sql.__enter__()
         cursor = sql.conn.cursor()
-        t = datetime(checktimedetails.timein.year,checktimedetails.timein.month, checktimedetails.timein.day, checktimedetails.timein.hour, checktimedetails.timein.minute)
+        t = datetime(checktimedetails.timein.year,checktimedetails.timein.month, checktimedetails.timein.day, checktimedetails.timein.hour, checktimedetails.timein.minute,checktimedetails.timein.second)
         t.strftime(f'%Y%m%d %H:%M:%S')
-        t1 = datetime(checktimedetails.timeout.year,checktimedetails.timeout.month, checktimedetails.timeout.day, checktimedetails.timeout.hour, checktimedetails.timeout.minute)
+        t1 = datetime(checktimedetails.timeout.year,checktimedetails.timeout.month, checktimedetails.timeout.day, checktimedetails.timeout.hour, checktimedetails.timeout.minute,checktimedetails.timeout.second)
         t1.strftime(f'%Y%m%d %H:%M:%S')
         cursor.execute(f'''
                 INSERT INTO CHECKTIMEDETAILS
                 VALUES
-                ('{checktimedetails.checkTimeID}','{t}','{t1}','{checktimedetails.sit}','{checktimedetails.stand}','{checktimedetails.mobile}')
+                ('{checktimedetails.checkTimeID}','{t}','{t1}')
                 ''')
 
         return {"data":"okay"}
